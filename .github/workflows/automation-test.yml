@@ -1,0 +1,179 @@
+# ============================================================
+# ParaBank BDD Automation — GitHub Actions CI Pipeline
+# ============================================================
+# Triggers : push, pull_request, manual (workflow_dispatch)
+# Runner   : ubuntu-latest
+# Browser  : Google Chrome via Xvfb virtual display
+# Build    : Gradle Wrapper (./gradlew clean test)
+# ============================================================
+
+name: ParaBank BDD Automation Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target test environment'
+        required: true
+        default: 'qa'
+        type: choice
+        options:
+          - qa
+          - staging
+          - uat
+          - prod
+
+# Cancel any in-flight run on the same branch when a new commit arrives
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  selenium-bdd-tests:
+    name: 'BDD Tests'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    # ── Resolve environment and credentials ──────────────────────────────
+    # TEST_USERNAME / TEST_PASSWORD are read from GitHub repository Secrets.
+    # When the secrets are not configured, ConfigManager falls back to the
+    # values in qa.properties (the public ParaBank demo credentials 'sqa/sqa').
+    env:
+      TEST_ENV: ${{ inputs.environment || 'qa' }}
+      TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
+      TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+
+    steps:
+      # ── 1. Source code ───────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Java 17 + Gradle dependency cache ─────────────────────────
+      - name: Set up Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      # ── 3. Verify Gradle wrapper JAR integrity ────────────────────────
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      # ── 4. Google Chrome ─────────────────────────────────────────────
+      #    ubuntu-latest ships with Chrome, but pinning 'stable' ensures
+      #    a known-good version and prevents random runner-image surprises.
+      - name: Set up Google Chrome (stable)
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Print Chrome version
+        run: google-chrome --version
+
+      # ── 5. Virtual display (Xvfb) ────────────────────────────────────
+      #    The framework's qa.properties sets headless=false; modifying
+      #    Java/config is out of scope.  Xvfb provides a 1920×1080 X11
+      #    display so Chrome can open windows on a headless Linux runner.
+      - name: Install Xvfb
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends xvfb
+
+      # ── 6. Gradle wrapper permissions ────────────────────────────────
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      # ── 7. Test execution ─────────────────────────────────────────────
+      #    Wrapped in xvfb-run to supply the X11 display Chrome needs.
+      #    -Denv passes the environment to ConfigManager (System.getProperty).
+      #    -Dbrowser=chrome matches the existing FrameworkConstants.
+      #    Exit code is preserved — the job fails on test failures (correct
+      #    CI signal), but artifact upload steps run regardless via if:always()
+      - name: Run Selenium BDD tests (${{ env.TEST_ENV }})
+        run: |
+          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" \
+            ./gradlew clean test \
+            -Denv=${{ env.TEST_ENV }} \
+            -Dbrowser=chrome \
+            -DmaxParallelForks=1 \
+            -Ddataproviderthreadcount=1
+
+      # ══════════════════════════════════════════════════════════════════
+      # ARTIFACT COLLECTION — all run even when tests fail (if: always())
+      # ══════════════════════════════════════════════════════════════════
+
+      # ── 8a. Test logs (rolling Logback output) ────────────────────────
+      - name: Upload test logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-logs-${{ env.TEST_ENV }}-run${{ github.run_number }}
+          path: build/logs/
+          retention-days: 30
+          if-no-files-found: warn
+
+      # ── 8b. Failure screenshots ───────────────────────────────────────
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-${{ env.TEST_ENV }}-run${{ github.run_number }}
+          path: build/screenshots/
+          retention-days: 30
+          if-no-files-found: warn
+
+      # ── 8c. ExtentReports HTML ────────────────────────────────────────
+      - name: Upload Extent Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: extent-report-${{ env.TEST_ENV }}-run${{ github.run_number }}
+          path: build/reports/extent/
+          retention-days: 30
+          if-no-files-found: warn
+
+      # ── 8d. Allure raw results (for Allure report generation) ─────────
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-${{ env.TEST_ENV }}-run${{ github.run_number }}
+          path: allure-results/
+          retention-days: 30
+          if-no-files-found: warn
+
+      # ── 8e. TestNG / Cucumber HTML reports ───────────────────────────
+      - name: Upload TestNG reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: testng-reports-${{ env.TEST_ENV }}-run${{ github.run_number }}
+          path: build/reports/tests/
+          retention-days: 30
+          if-no-files-found: warn
+
+      # ── 9. Job summary ────────────────────────────────────────────────
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## ParaBank BDD Test Run" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Property      | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| ------------- | ----- |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Environment   | \`${{ env.TEST_ENV }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Browser       | Chrome (Xvfb virtual display) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Trigger       | \`${{ github.event_name }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Branch        | \`${{ github.ref_name }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Commit        | \`${{ github.sha }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Run number    | #${{ github.run_number }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Artifacts are available in the **Actions → Artifacts** panel." >> "$GITHUB_STEP_SUMMARY"

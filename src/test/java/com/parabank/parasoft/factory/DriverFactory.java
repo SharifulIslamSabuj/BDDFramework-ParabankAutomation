@@ -1,7 +1,7 @@
 package com.parabank.parasoft.factory;
 
 import com.parabank.parasoft.config.ConfigManager;
-import com.parabank.parasoft.constants.FrameworkConstants;
+import com.parabank.parasoft.constants.BrowserConstants;
 import com.parabank.parasoft.exceptions.DriverInitializationException;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.WebDriver;
@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Duration;
+import java.util.List;
 
 /**
  * DriverFactory - Factory pattern for WebDriver creation
@@ -72,13 +74,13 @@ public class DriverFactory {
      */
     private static WebDriver initializeBrowser(String browserName) {
         switch (browserName.toLowerCase()) {
-            case FrameworkConstants.CHROME_BROWSER:
+            case BrowserConstants.CHROME_BROWSER:
                 return initializeChromeDriver();
-            case FrameworkConstants.FIREFOX_BROWSER:
+            case BrowserConstants.FIREFOX_BROWSER:
                 return initializeFirefoxDriver();
-            case FrameworkConstants.EDGE_BROWSER:
+            case BrowserConstants.EDGE_BROWSER:
                 return initializeEdgeDriver();
-            case FrameworkConstants.SAFARI_BROWSER:
+            case BrowserConstants.SAFARI_BROWSER:
                 return initializeSafariDriver();
             default:
                 throw new DriverInitializationException("Unsupported browser: " + browserName);
@@ -133,11 +135,11 @@ public class DriverFactory {
         try {
             URL gridEndpoint = new URL(gridUrl);
             switch (browserName.toLowerCase()) {
-                case FrameworkConstants.CHROME_BROWSER:
+                case BrowserConstants.CHROME_BROWSER:
                     return new RemoteWebDriver(gridEndpoint, buildChromeOptions());
-                case FrameworkConstants.FIREFOX_BROWSER:
+                case BrowserConstants.FIREFOX_BROWSER:
                     return new RemoteWebDriver(gridEndpoint, buildFirefoxOptions());
-                case FrameworkConstants.EDGE_BROWSER:
+                case BrowserConstants.EDGE_BROWSER:
                     return new RemoteWebDriver(gridEndpoint, buildEdgeOptions());
                 default:
                     throw new DriverInitializationException(
@@ -168,11 +170,12 @@ public class DriverFactory {
                 "--disable-images",
                 "--disable-popup-blocking",
                 "--disable-notifications",
-                "--disable-blink-features=AutomationControlled",
-                "excludeSwitches=enable-automation",
-                "useAutomationExtension=false"
+                "--disable-blink-features=AutomationControlled"
         );
         options.addArguments("--window-size=1920,1080");
+        // Suppress Selenium's "Chrome is being controlled by automated software" banner
+        options.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
+        options.setExperimentalOption("useAutomationExtension", false);
         return options;
     }
 
@@ -213,7 +216,7 @@ public class DriverFactory {
 
         // Set timeouts — implicit wait intentionally omitted; all element waits use explicit WebDriverWait via WaitUtils
         driver.manage().timeouts()
-                .pageLoadTimeout(java.time.Duration.ofSeconds(configManager.getPageLoadTimeout()));
+                .pageLoadTimeout(Duration.ofSeconds(configManager.getPageLoadTimeout()));
 
         // Maximize window
         driver.manage().window().maximize();

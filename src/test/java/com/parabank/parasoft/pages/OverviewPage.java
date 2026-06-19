@@ -28,6 +28,20 @@ public class OverviewPage extends BasePage {
     }
 
     /**
+     * Blocks until the page is fully loaded by waiting for the logout link.
+     * Use this after any navigation that should land on OverviewPage (login, registration).
+     *
+     * @return this OverviewPage for fluent chaining
+     * @throws com.parabank.parasoft.exceptions.WaitException if the page does not load within the configured wait time
+     */
+    public OverviewPage waitUntilLoaded() {
+        logger.info("Waiting for OverviewPage to load");
+        waitForElementVisible(LOGOUT_LINK);
+        logger.info("OverviewPage loaded successfully");
+        return this;
+    }
+
+    /**
      * Checks if logout link is visible
      *
      * @return true if logout link is displayed

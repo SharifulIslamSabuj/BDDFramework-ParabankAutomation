@@ -13,10 +13,10 @@ import org.openqa.selenium.support.ui.Select;
 public class RequestLoanPage extends BasePage {
 
     // ===== Private Locators =====
-    private static final By LOAN_AMOUNT = By.xpath("//input[@id='amount']");
-    private static final By DOWN_PAYMENT = By.xpath("//input[@id='downPayment']");
-    private static final By FROM_ACCOUNT_DROPDOWN = By.xpath("//select[@id='fromAccountId']");
-    private static final By APPLY_NOW_BUTTON = By.xpath("//input[@value='Apply Now']");
+    private static final By LOAN_AMOUNT         = By.id("amount");
+    private static final By DOWN_PAYMENT        = By.id("downPayment");
+    private static final By FROM_ACCOUNT_DROPDOWN = By.id("fromAccountId");
+    private static final By APPLY_NOW_BUTTON    = By.cssSelector("input[value='Apply Now']");
 
     /**
      * Constructor

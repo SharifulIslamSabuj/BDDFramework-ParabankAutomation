@@ -1,0 +1,57 @@
+# ==============================================================
+# ParaBank BDD Automation — Docker Compose
+# ==============================================================
+# Usage:
+#   docker compose up                        # run with defaults (qa / chrome)
+#   ENV=staging docker compose up            # staging environment
+#   ENV=uat BROWSER=firefox docker compose up
+#   docker compose up --build                # force image rebuild
+# ==============================================================
+
+services:
+  selenium-tests:
+    # ── Image ────────────────────────────────────────────────
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: parabank-bdd:latest
+    container_name: parabank-bdd-tests
+
+    # ── Runtime environment ───────────────────────────────────
+    # Variables map directly to Gradle -D system properties inside
+    # the container entrypoint.  Override any value from the shell:
+    #   ENV=staging docker compose up
+    environment:
+      - ENV=${ENV:-qa}
+      - BROWSER=${BROWSER:-chrome}
+      - MAX_PARALLEL_FORKS=${MAX_PARALLEL_FORKS:-1}
+      - DATA_PROVIDER_THREAD_COUNT=${DATA_PROVIDER_THREAD_COUNT:-1}
+      - JAVA_OPTS=${JAVA_OPTS:--Xmx1g -Xms512m}
+
+    # ── Shared memory ─────────────────────────────────────────
+    # Chrome uses /dev/shm for its sandbox renderer processes.
+    # The Docker default (64 MB) causes tab crashes.  2 GB is safe.
+    shm_size: '2gb'
+
+    # ── Volume mappings ───────────────────────────────────────
+    # Generated artifacts are written to /app/<path> inside the container
+    # and appear in the corresponding host directory after the run.
+    # Directories are created automatically by Docker Compose if absent.
+    volumes:
+      - ./build/reports:/app/build/reports
+      - ./build/screenshots:/app/build/screenshots
+      - ./build/logs:/app/build/logs
+      - ./allure-results:/app/allure-results
+
+    # ── Resource limits ───────────────────────────────────────
+    # Prevents a runaway Chrome instance from consuming all host memory.
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+        reservations:
+          memory: 1g
+
+    # ── Restart behaviour ─────────────────────────────────────
+    # Tests run once and exit; never restart automatically.
+    restart: "no"

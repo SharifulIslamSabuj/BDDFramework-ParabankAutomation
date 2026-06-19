@@ -15,9 +15,9 @@ import java.util.List;
 public class OpenNewAccountPage extends BasePage {
 
     // ===== Private Locators =====
-    private static final By ACCOUNT_TYPE_DROPDOWN = By.xpath("//select[@id='type']");
-    private static final By FROM_ACCOUNT_DROPDOWN = By.xpath("//select[@id='fromAccountId']");
-    private static final By OPEN_ACCOUNT_BUTTON = By.cssSelector("input[value='Open New Account']");
+    private static final By ACCOUNT_TYPE_DROPDOWN = By.id("type");
+    private static final By FROM_ACCOUNT_DROPDOWN = By.id("fromAccountId");
+    private static final By OPEN_ACCOUNT_BUTTON   = By.cssSelector("input[value='Open New Account']");
 
     /**
      * Constructor

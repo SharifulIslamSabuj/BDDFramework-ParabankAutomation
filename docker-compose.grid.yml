@@ -1,0 +1,82 @@
+# ============================================================
+# ParaBank BDD — Selenium Grid 4 Execution
+# ============================================================
+# Starts a Selenium Grid (Hub + Chrome Node) and then runs
+# the automation suite against it via RemoteWebDriver.
+#
+# Usage:
+#   docker compose -f docker-compose.grid.yml up --build
+#   docker compose -f docker-compose.grid.yml down
+#
+# Visual debugging — watch Chrome sessions live via noVNC:
+#   http://localhost:7900  (password: secret)
+#
+# Grid console:
+#   http://localhost:4444/ui
+#
+# Local execution (no Grid) — use the default compose file:
+#   docker compose up --build
+# ============================================================
+
+services:
+
+  # ── Selenium Hub ─────────────────────────────────────────
+  # Central coordinator: receives WebDriver commands from the
+  # test container and routes them to available browser nodes.
+  selenium-hub:
+    image: selenium/hub:4.25.0
+    container_name: selenium-hub
+    ports:
+      - "4444:4444"    # Grid console + WebDriver endpoint (/wd/hub)
+      - "4442:4442"    # Event bus (publish)
+      - "4443:4443"    # Event bus (subscribe)
+    healthcheck:
+      test: ["CMD", "/bin/sh", "-c", "curl -fsSL http://localhost:4444/wd/hub/status | grep -q '\"ready\":true'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # ── Chrome Node ──────────────────────────────────────────
+  # Browser executor: registers with the hub and handles
+  # WebDriver sessions. Configured for up to 2 concurrent sessions.
+  chrome-node:
+    image: selenium/node-chrome:4.25.0
+    container_name: selenium-chrome-node
+    shm_size: '2gb'
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=2
+      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
+    depends_on:
+      selenium-hub:
+        condition: service_healthy
+    ports:
+      - "7900:7900"    # noVNC live view (password: secret)
+
+  # ── Automation Tests ─────────────────────────────────────
+  # Runs the BDD suite using RemoteWebDriver against the Hub.
+  # Chrome executes on the chrome-node, not in this container.
+  selenium-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: parabank-bdd:latest
+    container_name: parabank-bdd-grid-tests
+    depends_on:
+      - chrome-node
+    environment:
+      - ENV=${ENV:-qa}
+      - BROWSER=chrome
+      - MAX_PARALLEL_FORKS=1
+      - DATA_PROVIDER_THREAD_COUNT=1
+      - SELENIUM_GRID_ENABLED=true
+      - GRID_URL=http://selenium-hub:4444/wd/hub
+    volumes:
+      - ./build/reports:/app/build/reports
+      - ./build/screenshots:/app/build/screenshots
+      - ./build/logs:/app/build/logs
+      - ./allure-results:/app/allure-results
+    restart: "no"

@@ -1,6 +1,7 @@
 package com.parabank.parasoft.utils;
 
-import com.parabank.parasoft.constants.FrameworkConstants;
+import com.parabank.parasoft.constants.PathConstants;
+import com.parabank.parasoft.constants.ReportConstants;
 import com.parabank.parasoft.exceptions.FrameworkException;
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.OutputType;
@@ -25,7 +26,7 @@ import java.util.Date;
  */
 public class ScreenshotUtils {
     private static final Logger logger = LoggerFactory.getLogger(ScreenshotUtils.class);
-    private static final String SCREENSHOT_DIR = FrameworkConstants.SCREENSHOTS_PATH;
+    private static final String SCREENSHOT_DIR = PathConstants.SCREENSHOTS_PATH;
     private static final String SCREENSHOT_EXTENSION = ".png";
 
     private ScreenshotUtils() {
@@ -52,7 +53,7 @@ public class ScreenshotUtils {
     public static String captureScreenshot(WebDriver driver, String testName) {
         logger.info("Capturing screenshot for test: {}", testName);
         try {
-            String timestamp = new SimpleDateFormat(FrameworkConstants.TIMESTAMP_FORMAT).format(new Date());
+            String timestamp = new SimpleDateFormat(ReportConstants.TIMESTAMP_FORMAT).format(new Date());
             String fileName = testName + "_" + timestamp + SCREENSHOT_EXTENSION;
             String filePath = SCREENSHOT_DIR + File.separator + fileName;
 
@@ -132,7 +133,7 @@ public class ScreenshotUtils {
     }
 
     /**
-     * Cleans old screenshots (optional cleanup utility)
+     * Cleans old screenshots — useful in CI pipelines to prevent build artifact bloat.
      *
      * @param maxAgeInMillis maximum age of screenshots to keep (in milliseconds)
      */
@@ -157,57 +158,6 @@ public class ScreenshotUtils {
             }
         } catch (Exception e) {
             logger.error("Failed to clean old screenshots", e);
-        }
-    }
-
-    /**
-     * Gets the last created screenshot file
-     *
-     * @return the File object of the last screenshot
-     */
-    public static File getLastScreenshot() {
-        logger.debug("Getting last screenshot");
-        try {
-            File directory = new File(SCREENSHOT_DIR);
-            if (!directory.exists() || !directory.isDirectory()) {
-                return null;
-            }
-
-            File[] files = directory.listFiles();
-            if (files == null || files.length == 0) {
-                return null;
-            }
-
-            File lastFile = files[0];
-            for (File file : files) {
-                if (file.lastModified() > lastFile.lastModified()) {
-                    lastFile = file;
-                }
-            }
-            logger.debug("Last screenshot: {}", lastFile.getName());
-            return lastFile;
-        } catch (Exception e) {
-            logger.error("Failed to get last screenshot", e);
-            return null;
-        }
-    }
-
-    /**
-     * Copies screenshot to a custom location
-     *
-     * @param sourcePath the source screenshot path
-     * @param destPath   the destination path
-     * @return true if copy was successful
-     */
-    public static boolean copyScreenshot(String sourcePath, String destPath) {
-        logger.info("Copying screenshot from {} to {}", sourcePath, destPath);
-        try {
-            FileUtils.copyFile(new File(sourcePath), new File(destPath));
-            logger.info("Screenshot copied successfully");
-            return true;
-        } catch (IOException e) {
-            logger.error("Failed to copy screenshot", e);
-            return false;
         }
     }
 }

@@ -67,11 +67,25 @@ test {
 
     useTestNG()
 
-    // Cucumber tag support — only set when explicitly provided; passing null causes undefined behavior
-    def cucumberTags = System.getProperty("cucumber.filter.tags")
-    if (cucumberTags != null) {
-        systemProperty "cucumber.filter.tags", cucumberTags
-    }
+    // Cucumber tag filtering — always set so the runner can rely on the system property.
+    // The hard-coded default mirrors what was previously in @CucumberOptions(tags=...).
+    // Override at the command line: ./gradlew test -Dcucumber.filter.tags="@smoke"
+    def cucumberTags = System.getProperty(
+            "cucumber.filter.tags",
+            "@smoke or @negative or @regression"
+    )
+    systemProperty "cucumber.filter.tags", cucumberTags
+
+    // Selenium Grid — forwarded from -DseleniumGridEnabled / -DgridUrl on the command line
+    systemProperty 'seleniumGridEnabled', System.getProperty('seleniumGridEnabled', 'false')
+    systemProperty 'gridUrl', System.getProperty('gridUrl', '')
+
+    // Credential system properties — optional; env vars are the preferred CI/Docker mechanism.
+    // If -DTEST_USERNAME / -DTEST_PASSWORD are provided, forward them to the test JVM.
+    def sysPropUsername = System.getProperty('TEST_USERNAME')
+    def sysPropPassword = System.getProperty('TEST_PASSWORD')
+    if (sysPropUsername) systemProperty 'TEST_USERNAME', sysPropUsername
+    if (sysPropPassword) systemProperty 'TEST_PASSWORD', sysPropPassword
 
     // ExtentReports
     systemProperty 'extent.reporter.spark.start', 'true'

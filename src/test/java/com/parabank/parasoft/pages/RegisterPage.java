@@ -185,19 +185,15 @@ public class RegisterPage extends BasePage {
             logger.warn("Page load wait timed out or failed: {}", e.getMessage());
         }
 
-        // Navigate to OverviewPage
-        OverviewPage overviewPage = createPage(OverviewPage.class);
-
-        // Wait explicitly for logout link to be visible on OverviewPage
+        // Navigate to OverviewPage and verify it loaded (WaitException propagates on failure)
         try {
-            overviewPage.waitForElementVisible(By.cssSelector("a[href='logout.htm']"));
-            logger.info("✓ OverviewPage loaded successfully - logout link is visible");
+            OverviewPage overviewPage = createPage(OverviewPage.class).waitUntilLoaded();
+            logger.info("✓ OverviewPage loaded successfully after registration");
+            return overviewPage;
         } catch (Exception e) {
-            logger.error("Expected element not found: Logout link not visible on OverviewPage. Registration may have failed. Error: {}", e.getMessage());
+            logger.error("OverviewPage did not load after registration — logout link not found: {}", e.getMessage());
             throw new RuntimeException("Registration may have failed - logout link not found on OverviewPage", e);
         }
-
-        return overviewPage;
     }
 
     /**

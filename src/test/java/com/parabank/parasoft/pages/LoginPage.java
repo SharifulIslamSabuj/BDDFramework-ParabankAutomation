@@ -2,8 +2,9 @@ package com.parabank.parasoft.pages;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
 import java.time.Duration;
 
 /**
@@ -70,7 +71,7 @@ public class LoginPage extends BasePage {
         click(LOGIN_BUTTON);
 
         // Wait for either the logout link (success) OR the error message (failure) to appear
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(configManager.getWaitTime()));
         try {
             wait.until(ExpectedConditions.or(
                 ExpectedConditions.visibilityOfElementLocated(LOGOUT_LINK),

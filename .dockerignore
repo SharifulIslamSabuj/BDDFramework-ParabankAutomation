@@ -1,0 +1,72 @@
+# ==============================================================
+# .dockerignore — ParaBank BDD Automation Framework
+# ==============================================================
+# Keeps the Docker build context lean.  Excluded paths are never
+# sent to the Docker daemon, so the image build is fast even when
+# the project directory contains heavy generated artefacts.
+# ==============================================================
+
+# ── Version control ──────────────────────────────────────────
+.git/
+.gitignore
+
+# ── IDE / editor metadata ────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*~
+
+# ── Gradle build outputs (generated artefacts) ───────────────
+# These are produced inside the container at runtime and mapped
+# back to the host via volume mounts — they must NOT be baked
+# into the image.
+.gradle/
+build/
+
+# ── Test artefacts (generated at runtime) ────────────────────
+allure-results/
+allure-report/
+test-output/
+extent-report/
+extent-reports/
+
+# ── Log files ────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Screenshots ───────────────────────────────────────────────
+screenshots/
+
+# ── OS generated files ────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Secrets and local overrides ───────────────────────────────
+.env
+.env.*
+*.local.properties
+secrets/
+
+# ── Compiled Java class files ─────────────────────────────────
+*.class
+
+# ── Temporary and backup files ────────────────────────────────
+*.tmp
+*.bak
+*.orig
+
+# ── Docker files themselves (no need to copy into image) ──────
+Dockerfile
+docker-compose.yml
+docker-entrypoint.sh
+.dockerignore
+
+# ── CI/CD metadata ────────────────────────────────────────────
+.github/
+
+# ── Documentation (not needed at runtime) ────────────────────
+README.md

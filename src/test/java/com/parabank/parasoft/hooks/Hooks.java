@@ -2,11 +2,14 @@ package com.parabank.parasoft.hooks;
 
 import com.parabank.parasoft.config.ConfigManager;
 import com.parabank.parasoft.driver.DriverManager;
+import com.parabank.parasoft.pages.LoginPage;
+import com.parabank.parasoft.pages.RegisterPage;
+import com.parabank.parasoft.utils.ParaBankApiClient;
 import com.parabank.parasoft.utils.ScreenshotUtils;
+import com.thedeanda.lorem.LoremIpsum;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,11 +96,17 @@ public class Hooks {
     }
 
     /**
-     * Registers the default test user 'sqa' in ParaBank once per test suite run.
-     * Uses double-checked locking so only one thread performs registration
-     * even under parallel execution. If the user already exists, the attempt
-     * is silently ignored. The driver is always returned to the base URL
-     * before this method returns.
+     * Ensures the default test user exists in ParaBank exactly once per suite run.
+     *
+     * <p>Strategy (API-first with browser fallback):
+     * <ol>
+     *   <li>Attempt registration via HTTP POST ({@link ParaBankApiClient}) — fast, no browser.</li>
+     *   <li>If the API call fails or is unavailable, fall back to browser-based registration
+     *       through the framework's page object layer (LoginPage → RegisterPage → WaitUtils).</li>
+     * </ol>
+     *
+     * <p>Double-checked locking (AtomicBoolean + synchronized) guarantees that only one
+     * thread performs setup even when scenarios run in parallel.
      */
     private void ensureDefaultTestUserExists() {
         if (DEFAULT_USER_SETUP_DONE.get()) return;
@@ -105,41 +114,81 @@ public class Hooks {
         synchronized (SETUP_LOCK) {
             if (DEFAULT_USER_SETUP_DONE.get()) return;
 
-            WebDriver driver = DriverManager.getDriver();
             ConfigManager config = ConfigManager.getInstance();
-            String baseUrl = config.getBaseUrl();
+            String baseUrl    = config.getBaseUrl();
             String testUsername = config.getUsername();
             String testPassword = config.getPassword();
-            logger.info("[TestData] Registering default test user '{}' (one-time suite setup)", testUsername);
+
+            logger.info("[TestData] Ensuring default test user '{}' is registered (one-time setup)", testUsername);
+
+            boolean done = tryApiRegistration(baseUrl, testUsername, testPassword);
+            if (!done) {
+                tryBrowserRegistration(baseUrl, testUsername, testPassword);
+            }
+
+            DEFAULT_USER_SETUP_DONE.set(true);
+        }
+    }
+
+    /**
+     * Attempts user registration via HTTP POST — no browser required.
+     *
+     * @return true if the user was registered or already exists; false on any error
+     */
+    private boolean tryApiRegistration(String baseUrl, String username, String password) {
+        try {
+            ParaBankApiClient api = new ParaBankApiClient(baseUrl);
+            boolean result = api.registerUser(
+                    "QA", "Engineer", "123 Test Street", "Boston", "MA",
+                    "02101", "617-555-0100", "000-00-0001",
+                    username, password
+            );
+            if (result) {
+                logger.info("[TestData] API registration succeeded for user '{}'", username);
+            }
+            return result;
+        } catch (Exception e) {
+            logger.info("[TestData] API registration unavailable: {}. Using browser fallback.", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Registers the user through the browser using the framework's page object layer.
+     * All element interactions go through BasePage → ElementActions → WaitUtils.
+     */
+    private void tryBrowserRegistration(String baseUrl, String username, String password) {
+        WebDriver driver = DriverManager.getDriver();
+        logger.info("[TestData] Browser registration fallback for user '{}'", username);
+        try {
+            driver.get(baseUrl);
+            LoginPage loginPage = new LoginPage(driver);
+            RegisterPage registerPage = loginPage.clickRegisterLink();
+            registerPage
+                    .fillFirstName(LoremIpsum.getInstance().getFirstName())
+                    .fillLastName(LoremIpsum.getInstance().getLastName())
+                    .fillAddress(LoremIpsum.getInstance().getTitle(3))
+                    .fillCity(LoremIpsum.getInstance().getCity())
+                    .fillState(LoremIpsum.getInstance().getStateAbbr())
+                    .fillZipCode(LoremIpsum.getInstance().getZipCode())
+                    .fillPhone(LoremIpsum.getInstance().getPhone())
+                    .fillSSN(LoremIpsum.getInstance().getPhone())
+                    .fillUsername(username)
+                    .fillPassword(password)
+                    .fillConfirmPassword(password);
+            // Does not assert success: user may already exist on the demo server.
+            registerPage.clickRegisterButtonWithFail();
+            logger.info("[TestData] Browser registration submitted for '{}'", username);
+        } catch (Exception e) {
+            logger.info("[TestData] Browser registration attempt concluded (user may already exist): {}", e.getMessage());
+        } finally {
             try {
-                driver.get(baseUrl + "register.htm");
-                driver.findElement(By.id("customer.firstName")).sendKeys("QA");
-                driver.findElement(By.id("customer.lastName")).sendKeys("Engineer");
-                driver.findElement(By.id("customer.address.street")).sendKeys("123 Main St");
-                driver.findElement(By.id("customer.address.city")).sendKeys("Boston");
-                driver.findElement(By.id("customer.address.state")).sendKeys("MA");
-                driver.findElement(By.id("customer.address.zipCode")).sendKeys("02108");
-                driver.findElement(By.id("customer.phoneNumber")).sendKeys("617-555-1212");
-                driver.findElement(By.id("customer.ssn")).sendKeys("999-99-9999");
-                driver.findElement(By.id("customer.username")).sendKeys(testUsername);
-                driver.findElement(By.id("customer.password")).sendKeys(testPassword);
-                driver.findElement(By.id("repeatedPassword")).sendKeys(testPassword);
-                driver.findElement(By.cssSelector("input[value='Register']")).click();
-                logger.info("[TestData] Default test user '{}' registration request submitted", testUsername);
+                // Navigate back to login page regardless of registration outcome.
+                driver.get(baseUrl + "logout.htm");
+                driver.get(baseUrl + "index.htm");
+                logger.info("[TestData] Driver returned to login page after browser registration");
             } catch (Exception e) {
-                // User may already exist — this is not a fatal error
-                logger.info("[TestData] Registration attempt concluded (user may already exist): {}", e.getMessage());
-            } finally {
-                DEFAULT_USER_SETUP_DONE.set(true);
-                try {
-                    // Logout first in case registration succeeded and auto-logged the user in.
-                    // This ensures the driver lands on the login form regardless of session state.
-                    driver.get(baseUrl + "logout.htm");
-                    driver.get(baseUrl + "index.htm");
-                    logger.info("[TestData] Driver returned to login page after test data setup");
-                } catch (Exception e) {
-                    logger.warn("[TestData] Could not navigate back to login page: {}", e.getMessage());
-                }
+                logger.warn("[TestData] Could not navigate back to login page: {}", e.getMessage());
             }
         }
     }

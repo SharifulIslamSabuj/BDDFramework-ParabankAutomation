@@ -1,6 +1,8 @@
 package com.parabank.parasoft.config;
 
 import com.parabank.parasoft.constants.FrameworkConstants;
+import com.parabank.parasoft.constants.TestDataConstants;
+import com.parabank.parasoft.constants.TimeoutConstants;
 import com.parabank.parasoft.exceptions.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +46,7 @@ public class ConfigManager {
      * Loads configuration from properties file
      */
     private void loadConfiguration() {
-        this.environment = System.getProperty("env", FrameworkConstants.ENV_QA).toLowerCase();
+        this.environment = System.getProperty("env", TestDataConstants.ENV_QA).toLowerCase();
         String fileName = environment + ".properties";
         Path configPath = Paths.get(System.getProperty("user.dir"), "src", "test", "resources", "config", fileName);
         config = new Properties();
@@ -85,55 +87,69 @@ public class ConfigManager {
     }
 
     /**
-     * Gets headless mode setting
+     * Gets headless mode setting.
+     * Resolution order: -Dheadless system property → properties file → {@link FrameworkConstants#DEFAULT_HEADLESS_MODE}.
      *
      * @return true if headless mode is enabled
      */
     public boolean isHeadless() {
-        return getBoolean("headless", false);
+        String sysProp = System.getProperty("headless");
+        if (sysProp != null) return Boolean.parseBoolean(sysProp.trim());
+        return getBoolean("headless", FrameworkConstants.DEFAULT_HEADLESS_MODE);
     }
 
     /**
      * Returns true when tests should run against a Selenium Grid instead of a local browser.
+     * Resolution order: -DseleniumGridEnabled system property → properties file → false.
      */
     public boolean isSeleniumGridEnabled() {
+        String sysProp = System.getProperty("seleniumGridEnabled");
+        if (sysProp != null) return Boolean.parseBoolean(sysProp.trim());
         return getBoolean("seleniumGridEnabled", false);
     }
 
     /**
-     * Gets the Selenium Grid hub URL (e.g. http://selenium-grid:4444/wd/hub).
+     * Gets the Selenium Grid hub URL (e.g. http://selenium-hub:4444/wd/hub).
+     * Resolution order: -DgridUrl system property → properties file → empty string.
      */
     public String getRemoteGridUrl() {
+        String sysProp = System.getProperty("gridUrl");
+        if (sysProp != null && !sysProp.isBlank()) return sysProp.trim();
         return get("remoteGridUrl", "");
     }
 
     // ===== Timeout Configuration =====
 
     /**
-     * Gets explicit wait timeout in seconds
+     * Gets explicit wait timeout in seconds.
+     * Defaults to {@link TimeoutConstants#EXPLICIT_WAIT_TIME} when not set in properties.
      *
-     * @return timeout value
+     * @return timeout in seconds
      */
     public int getWaitTime() {
-        return getInt("waitTime", 30);
+        return getInt("waitTime", TimeoutConstants.EXPLICIT_WAIT_TIME);
     }
 
     /**
-     * Gets implicit wait timeout in seconds
+     * Gets implicit wait timeout in seconds.
+     * Note: implicit waits are intentionally disabled in this framework; all waits use explicit WebDriverWait.
+     * This value is available for informational purposes and future use.
+     * Defaults to {@link TimeoutConstants#IMPLICIT_WAIT_TIME} when not set in properties.
      *
      * @return timeout in seconds
      */
     public int getImplicitWait() {
-        return getInt("implicitWait", 20);
+        return getInt("implicitWait", TimeoutConstants.IMPLICIT_WAIT_TIME);
     }
 
     /**
-     * Gets page load timeout in seconds
+     * Gets page load timeout in seconds.
+     * Defaults to {@link TimeoutConstants#PAGE_LOAD_TIMEOUT} when not set in properties.
      *
      * @return timeout in seconds
      */
     public int getPageLoadTimeout() {
-        return getInt("pageLoadTimeout", 45);
+        return getInt("pageLoadTimeout", TimeoutConstants.PAGE_LOAD_TIMEOUT);
     }
 
     // ===== Test Data =====
@@ -144,19 +160,26 @@ public class ConfigManager {
      * @return username
      */
     public String getUsername() {
-        String envUser = System.getenv("TEST_USERNAME");
-        if (envUser != null && !envUser.isBlank()) return envUser;
+        // Priority: -DTEST_USERNAME system property → TEST_USERNAME env var → properties file
+        String sysProp = System.getProperty("TEST_USERNAME");
+        if (sysProp != null && !sysProp.isBlank()) return sysProp;
+        String envVar = System.getenv("TEST_USERNAME");
+        if (envVar != null && !envVar.isBlank()) return envVar;
         return get("username");
     }
 
     /**
-     * Gets valid password for testing
+     * Gets valid password for testing.
+     * Credentials are never printed in logs.
      *
      * @return password
      */
     public String getPassword() {
-        String envPass = System.getenv("TEST_PASSWORD");
-        if (envPass != null && !envPass.isBlank()) return envPass;
+        // Priority: -DTEST_PASSWORD system property → TEST_PASSWORD env var → properties file
+        String sysProp = System.getProperty("TEST_PASSWORD");
+        if (sysProp != null && !sysProp.isBlank()) return sysProp;
+        String envVar = System.getenv("TEST_PASSWORD");
+        if (envVar != null && !envVar.isBlank()) return envVar;
         return get("password");
     }
 
@@ -177,7 +200,7 @@ public class ConfigManager {
      * @return true if QA environment
      */
     public boolean isQAEnvironment() {
-        return FrameworkConstants.ENV_QA.equalsIgnoreCase(environment);
+        return TestDataConstants.ENV_QA.equalsIgnoreCase(environment);
     }
 
     /**
@@ -186,7 +209,7 @@ public class ConfigManager {
      * @return true if Staging environment
      */
     public boolean isStagingEnvironment() {
-        return FrameworkConstants.ENV_STAGING.equalsIgnoreCase(environment);
+        return TestDataConstants.ENV_STAGING.equalsIgnoreCase(environment);
     }
 
     /**
@@ -195,27 +218,29 @@ public class ConfigManager {
      * @return true if Production environment
      */
     public boolean isProductionEnvironment() {
-        return FrameworkConstants.ENV_PRODUCTION.equalsIgnoreCase(environment);
+        return TestDataConstants.ENV_PRODUCTION.equalsIgnoreCase(environment);
     }
 
     // ===== Reporting Configuration =====
 
     /**
-     * Gets screenshot on failure setting
+     * Gets screenshot on failure setting.
+     * Defaults to {@link FrameworkConstants#DEFAULT_SCREENSHOTS_ON_FAILURE} when not set in properties.
      *
      * @return true if screenshots should be taken on failure
      */
     public boolean takeScreenshotOnFailure() {
-        return getBoolean("screenshotOnFailure", true);
+        return getBoolean("screenshotOnFailure", FrameworkConstants.DEFAULT_SCREENSHOTS_ON_FAILURE);
     }
 
     /**
-     * Gets screenshot on pass setting
+     * Gets screenshot on pass setting.
+     * Defaults to {@link FrameworkConstants#DEFAULT_SCREENSHOT_ON_PASS} when not set in properties.
      *
      * @return true if screenshots should be taken on pass
      */
     public boolean takeScreenshotOnPass() {
-        return getBoolean("screenshotOnPass", false);
+        return getBoolean("screenshotOnPass", FrameworkConstants.DEFAULT_SCREENSHOT_ON_PASS);
     }
 
     /**
@@ -224,10 +249,10 @@ public class ConfigManager {
      * @return thread count
      */
     public int getThreadPoolSize() {
-        int threadCount = getInt("threadPoolSize", FrameworkConstants.DEFAULT_THREAD_POOL_SIZE);
-        if (threadCount <= 0 || threadCount > FrameworkConstants.MAX_THREAD_POOL_SIZE) {
-            logger.warn("Invalid thread pool size: {}. Using default: {}", threadCount, FrameworkConstants.DEFAULT_THREAD_POOL_SIZE);
-            return FrameworkConstants.DEFAULT_THREAD_POOL_SIZE;
+        int threadCount = getInt("threadPoolSize", TimeoutConstants.DEFAULT_THREAD_POOL_SIZE);
+        if (threadCount <= 0 || threadCount > TimeoutConstants.MAX_THREAD_POOL_SIZE) {
+            logger.warn("Invalid thread pool size: {}. Using default: {}", threadCount, TimeoutConstants.DEFAULT_THREAD_POOL_SIZE);
+            return TimeoutConstants.DEFAULT_THREAD_POOL_SIZE;
         }
         return threadCount;
     }
