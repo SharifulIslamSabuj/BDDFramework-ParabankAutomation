@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] [%X{scenarioName:-NO_SCENARIO}] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>build/logs/test.log</file>
+        <!-- SizeAndTimeBasedRollingPolicy combines daily rotation with a per-file size cap.
+             Logback uses a single lock per appender, so parallel-thread writes are safe. -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- Roll daily; %i is the size-split index within a single day -->
+            <fileNamePattern>build/logs/archive/test.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- Cap each individual rolled file at 10 MB -->
+            <maxFileSize>10MB</maxFileSize>
+            <!-- Delete rolled files older than 30 days -->
+            <maxHistory>30</maxHistory>
+            <!-- Hard cap on total archive size across all retained files -->
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] [%X{scenarioName:-NO_SCENARIO}] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </root>
+
+    <logger name="com.parabank.parasoft" level="DEBUG" />
+</configuration>

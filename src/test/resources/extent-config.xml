@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extentreports>
+    <configuration>
+        <!-- report theme -->
+        <theme>standard</theme>
+        <!-- document encoding -->
+        <encoding>utf-8</encoding>
+        <!-- protocol for script and stylesheets -->
+        <protocol>https</protocol>
+        <!-- title of the document -->
+        <documentTitle>ParaBank Automation Report</documentTitle>
+        <!-- report name - displayed at top-nav -->
+        <reportName>ParaBank Test Report</reportName>
+        <!-- report headline - displayed at top-nav, after report name -->
+        <reportHeadline>Test Execution Report</reportHeadline>
+        <!-- global date format override -->
+        <timeStampFormat>MMM dd, yyyy HH:mm:ss</timeStampFormat>
+        <!-- custom javascript -->
+        <scripts></scripts>
+        <!-- custom styles -->
+        <styles></styles>
+    </configuration>
+</extentreports>
