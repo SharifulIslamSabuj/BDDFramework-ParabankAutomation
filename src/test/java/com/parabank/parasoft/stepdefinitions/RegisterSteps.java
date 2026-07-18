@@ -168,16 +168,61 @@ public class RegisterSteps {
     @Then("User should see error message")
     public void user_should_see_error_message() {
         logger.info("Verifying error message is displayed");
-        
-        // Robust validation: check for error messages on register page
+
         boolean hasError = registerPage.hasErrorMessage();
         Assert.assertTrue(hasError, "At least one error message should be displayed on RegisterPage");
-        
-        // Log the actual error text for debugging
+
         String errorText = registerPage.getErrorMessageText();
         logger.info("Error message text: {}", errorText);
         Assert.assertFalse(errorText.isEmpty(), "Error message should not be empty");
-        
+
         logger.info("✓ Error message verified: {}", errorText);
+    }
+
+    // ── Business-language step definitions (delegate to existing methods) ──
+
+    @Given("a new customer is on the registration page")
+    public void a_new_customer_is_on_the_registration_page() {
+        user_navigates_to_register_page();
+    }
+
+    @When("the customer provides their personal information to complete registration")
+    public void the_customer_provides_their_personal_information_to_complete_registration() {
+        user_fills_registration_form_with_hard_data();
+    }
+
+    @When("the customer provides a freshly generated profile to complete registration")
+    public void the_customer_provides_a_freshly_generated_profile_to_complete_registration() {
+        user_fills_registration_form_with_ipsum_data();
+    }
+
+    @When("the customer provides registration details supplied from an external source")
+    public void the_customer_provides_registration_details_supplied_from_an_external_source() {
+        user_fills_registration_form_with_excel_data();
+    }
+
+    @When("the customer submits the registration form")
+    public void the_customer_submits_the_registration_form() {
+        user_submits_registration();
+    }
+
+    @When("the customer completes the form without providing a username")
+    public void the_customer_completes_the_form_without_providing_a_username() {
+        user_fills_registration_form_without_username();
+    }
+
+    @When("the customer attempts to submit the incomplete registration form")
+    public void the_customer_attempts_to_submit_the_incomplete_registration_form() {
+        user_submits_registration_expecting_failure();
+    }
+
+    @Then("the customer's account should be created successfully")
+    public void the_customers_account_should_be_created_successfully() {
+        user_account_should_be_created();
+    }
+
+    @Then("the customer should see a registration validation error")
+    public void the_customer_should_see_a_registration_validation_error() {
+        user_should_see_error_message();
     }
 }

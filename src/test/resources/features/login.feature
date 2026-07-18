@@ -1,104 +1,83 @@
-@smoke
-Feature: ParaBank Login
-  Verify that the login page correctly handles valid and invalid inputs.
+@regression
+Feature: Customer Sign-In
+  As a registered customer
+  I want to sign in to my online banking account
+  So that I can access my personal banking services securely
 
-  Scenario: Successful login
-    Given User is on Login Page
-    When User enters username "sqa" and password "sqa"
-    And User clicks login button
-    Then User should see logout link
+  Background:
+    Given a registered customer is on the sign-in page
 
-  # 1️⃣ Invalid credentials
-  @negative
-  Scenario: Login with invalid username and valid password
-    Given User is on Login Page
-    When User enters username "invalidUser" and password "validPass123"
-    And User clicks login button
-    Then User should see error message "The username and password could not be verified."
+  # ── Positive ──────────────────────────────────────────────────────────────
 
-  @negative
-  Scenario: Login with valid username and invalid password
-    Given User is on Login Page
-    When User enters username "validUser" and password "wrongPass"
-    And User clicks login button
-    Then User should see error message "The username and password could not be verified."
+  @smoke @positive
+  Scenario: A registered customer can sign in with valid credentials
+    When the customer signs in with username "sqa" and password "sqa"
+    And the customer submits their login credentials
+    Then the customer is successfully signed in
 
-  @negative
-  Scenario: Login with blank username and valid password
-    Given User is on Login Page
-    When User leaves username blank and enters password "validPass123"
-    And User clicks login button
-    Then User should see error message "Please enter a username and password."
+  # ── Authentication Validation ─────────────────────────────────────────────
 
-  @negative
-  Scenario: Login with valid username and blank password
-    Given User is on Login Page
-    When User enters username "validUser" and leaves password blank
-    And User clicks login button
-    Then User should see error message "Please enter a username and password."
+  @negative @validation
+  Scenario Outline: Sign-in is rejected when credentials do not match any registered account
+    When the customer signs in with username "<username>" and password "<password>"
+    And the customer submits their login credentials
+    Then the customer is shown the sign-in error "The username and password could not be verified."
 
-  @negative
-  Scenario: Login with blank username and blank password
-    Given User is on Login Page
-    When User leaves username and password blank
-    And User clicks login button
-    Then User should see error message "Please enter a username and password."
+    Examples:
+      | username    | password     |
+      | invalidUser | validPass123 |
+      | validUser   | wrongPass    |
 
-  # 2️⃣ SQL Injection / Script Injection
-  @negative
-  Scenario: SQL injection attempt in username
-    Given User is on Login Page
-    When User enters username "'; DROP TABLE users; --" and password "validPass123"
-    And User clicks login button
-    Then User should see error message "The username and password could not be verified."
+  # ── Input Validation ──────────────────────────────────────────────────────
 
-  @negative
-  Scenario: SQL injection attempt in password
-    Given User is on Login Page
-    When User enters username "validUser" and password "' OR '1'='1"
-    And User clicks login button
-    Then User should see error message "The username and password could not be verified."
+  @negative @validation
+  Scenario Outline: Sign-in is rejected when required credential fields are not provided
+    When the customer signs in with username "<username>" and password "<password>"
+    And the customer submits their login credentials
+    Then the customer is shown the sign-in error "Please enter a username and password."
 
-  @negative
-  Scenario: Script injection attempt in username
-    Given User is on Login Page
-    When User enters username "<script>alert('xss')</script>" and password "validPass123"
-    And User clicks login button
-    Then User should see error message "The username and password could not be verified."
+    Examples:
+      | username  | password     |
+      |           | validPass123 |
+      | validUser |              |
+      |           |              |
 
-  # 3️⃣ Input validation / boundary checks
-  @negative
-  Scenario: Username exceeds maximum allowed length
-    Given User is on Login Page
-    When User enters username "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" and password "validPass123"
-    And User clicks login button
-    Then User should see error message "The username and password could not be verified."
+  @negative @validation
+  Scenario Outline: Sign-in is rejected when credentials do not meet format requirements
+    When the customer signs in with username "<username>" and password "<password>"
+    And the customer submits their login credentials
+    Then the customer is shown the sign-in error "The username and password could not be verified."
 
-  @negative
-  Scenario: Password exceeds maximum allowed length
-    Given User is on Login Page
-    When User enters username "validUser" and password "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    And User clicks login button
-    Then User should see error message "The username and password could not be verified."
+    Examples:
+      | username                                           | password                                           |
+      | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | validPass123                                       |
+      | validUser                                          | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
+      | user@!#                                            | validPass123                                       |
+
+  @negative @validation
+  Scenario: Sign-in is rejected when the password consists entirely of whitespace
+    When the customer signs in with username "validUser" and password "    "
+    And the customer submits their login credentials
+    Then the customer is shown the sign-in error "The username and password could not be verified."
+
+  # ── Security Validation ───────────────────────────────────────────────────
+
+  @negative @security
+  Scenario Outline: Sign-in is protected against injection and scripting attacks
+    When the customer signs in with username "<username>" and password "<password>"
+    And the customer submits their login credentials
+    Then the customer is shown the sign-in error "The username and password could not be verified."
+
+    Examples:
+      | username                       | password    |
+      | '; DROP TABLE users; --        | validPass123 |
+      | validUser                      | ' OR '1'='1 |
+      | <script>alert('xss')</script>  | validPass123 |
+
+  # ── Account State Validation ──────────────────────────────────────────────
 
   @negative
-  Scenario: Username contains invalid characters
-    Given User is on Login Page
-    When User enters username "user@!#" and password "validPass123"
-    And User clicks login button
-    Then User should see error message "The username and password could not be verified."
-
-  @negative
-  Scenario: Password contains only spaces
-    Given User is on Login Page
-    When User enters username "validUser" and password "    "
-    And User clicks login button
-    Then User should see error message "The username and password could not be verified."
-
-  # 4️⃣ Locked or inactive account
-  @negative
-  Scenario: Login with a locked account
-    Given User is on Login Page
-    When User enters username "lockedUser" and password "validPass123"
-    And User clicks login button
-    Then User should see error message "The username and password could not be verified."
+  Scenario: Sign-in is rejected for a locked or deactivated account
+    When the customer signs in with username "lockedUser" and password "validPass123"
+    And the customer submits their login credentials
+    Then the customer is shown the sign-in error "The username and password could not be verified."

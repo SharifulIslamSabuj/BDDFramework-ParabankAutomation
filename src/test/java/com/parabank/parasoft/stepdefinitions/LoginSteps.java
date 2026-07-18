@@ -144,4 +144,31 @@ public class LoginSteps {
         String errorText = loginPage.getErrorMessageText();
         logger.info("✓ Error message displayed: {}", errorText);
     }
+
+    // ── Business-language step definitions (delegate to existing methods) ──
+
+    @Given("a registered customer is on the sign-in page")
+    public void a_registered_customer_is_on_the_sign_in_page() {
+        user_on_login_page();
+    }
+
+    @When("the customer signs in with username {string} and password {string}")
+    public void the_customer_signs_in_with_username_and_password(String username, String password) {
+        user_enters_username_and_password(username, password);
+    }
+
+    @When("the customer submits their login credentials")
+    public void the_customer_submits_their_login_credentials() {
+        user_clicks_login_button();
+    }
+
+    @Then("the customer is successfully signed in")
+    public void the_customer_is_successfully_signed_in() {
+        user_should_see_logout_link();
+    }
+
+    @Then("the customer is shown the sign-in error {string}")
+    public void the_customer_is_shown_the_sign_in_error(String expectedMessage) {
+        user_should_see_error_message(expectedMessage);
+    }
 }
