@@ -115,7 +115,7 @@ is applied where evidence modifies the matrix-derived rating, and the rationale 
 | QR-005 | Configuration | `production` alias has no dedicated properties file | Low | Medium | Low | Falls back to `config.properties`; guard prevents writes | Accepted |
 | QR-006 | Configuration | Orphaned `implicitWait` property in 5 config files | Low | Low | Low | No loader reads it; harmless | Accepted |
 | QR-007 | Configuration | `POLLING_INTERVAL_MILLIS` constant — no active caller | Low | Low | Low | Constant exists; unused; no functional impact | Deferred |
-| QR-008 | Infrastructure | Selenium Grid — `selenium-tests` depends on `chrome-node` without health-check gate | Low | Medium | Low | Hub has health check; Node starts after Hub; documented startup note | Deferred |
+| QR-008 | Infrastructure | Selenium Grid — `selenium-tests` depends on `chrome-node` without health-check gate | Low | Medium | Low | Health-check cascade implemented in Phase 9; `chrome-node` must be healthy before `selenium-tests` starts | Mitigated |
 | QR-009 | CI/CD | Known failures cause GitHub Actions job to report failure status | High | Low | Medium | Accurately signals AUT deviation; documented in all guidance | Accepted |
 | QR-010 | Security | Production write guard scope — read-only scenario writes not covered | Low | Low | Low | Guard targets setup writes only; documented limitation | Accepted |
 | QR-011 | Test Design | Limited browser coverage — Chrome only in CI | Medium | Low | Low | Local execution supports Firefox/Edge; CI scoped to Chrome | Deferred |
@@ -287,32 +287,41 @@ Create `production.properties` as a copy of `prod.properties`, or document clear
 **Rating:** Low
 
 **Description:**  
-In `docker-compose.grid.yml`, the `selenium-tests` service depends on `chrome-node` using
-`depends_on: - chrome-node` (start order only). The `selenium-hub` service has a full health
-check (`/wd/hub/status?ready=true`). The `chrome-node` does not have a health check, so
-`selenium-tests` may start before the Node has registered with the Hub, leading to
-"no available nodes" errors on the first test.
+Previously, `docker-compose.grid.yml` started `selenium-tests` on `chrome-node` container
+start only (no health-check condition), creating a startup race where tests could begin before
+the Node registered with the Hub.
+
+**Phase 9 mitigation (2026-07-18):**  
+Two changes were made to `docker-compose.grid.yml`:
+
+1. **Hub health check corrected** — the original check (`/wd/hub/status | grep '"ready":true'`)
+   caused a deadlock in Selenium 4: the Hub reports `ready: false` until a node registers, but
+   the Node cannot start until the Hub is healthy. Fixed by checking only HTTP liveness:
+   `curl -f http://localhost:4444/status` (returns 200 as soon as the Hub process starts).
+
+2. **Chrome-node health check added** — the node's own `/status` endpoint at port 5555
+   returns HTTP 200 only after successful hub registration. Health check:
+   `curl -f http://localhost:5555/status`. `selenium-tests` now depends on
+   `chrome-node: condition: service_healthy`, guaranteeing a registered node before tests start.
+
+3. **`scripts/wait-for-grid.ps1` added** — for host-side execution (running `./gradlew`
+   directly rather than via Docker Compose), the script polls `http://localhost:4444/status`
+   until `ready: true` and at least one node is registered, or timeout (default 120s).
 
 **Evidence:**  
-`docker-compose.grid.yml` inspected — confirmed `chrome-node` has no health check; `selenium-hub`
-has health check; `selenium-tests` depends on `chrome-node` by start order only.
-
-README already documents: "If the first test run fails with 'no available nodes', wait and re-run."
-
-**Current controls:**  
-- Hub health check gates Node startup
-- Documentation advises 20–30 second wait
-- Grid-specific documentation notes this as a limitation
+- Grid started and both containers reached `(healthy)` state in ~60s
+- `http://localhost:4444/status` confirmed: `ready: true`, 1 node, 2 Chrome slots
+- Focused smoke test (1 scenario) passed via RemoteWebDriver
+- Full Grid regression: 30 tests, 12 safety tests passed, 18 Cucumber executions,
+  12 passed, 6 known AUT failures, 0 unexpected failures
 
 **Residual risk:**  
-First test execution in Grid mode may fail with driver initialisation errors.
+Chrome-node health check verifies HTTP 200 from `/status`. Between the health check passing
+and the first test, a node crash would produce a session error. This window is negligible
+in practice and cannot be eliminated without retrying at the session level.
 
-**Recommended action:**  
-Add a health check or `wait-for-it` script for `chrome-node` registration with the Hub.
-Deferred as an infrastructure enhancement.
-
-**Owner:** CI maintainer / Framework maintainer (deferred)  
-**Status:** Deferred
+**Owner:** Phase 9 — implemented  
+**Status:** Mitigated
 
 ---
 
@@ -376,7 +385,7 @@ report layer or use Cucumber ignore annotations, but both approaches reduce diag
 | TD-001 | Orphaned `implicitWait` property in 5 config files | Phase 5 report; `getImplicitWait()` removed but keys retained | None — no code reads the key | Low | Future configuration cleanup phase |
 | TD-002 | `POLLING_INTERVAL_MILLIS` — declared, zero callers confirmed | `git grep` confirms declaration only in `TimeoutConstants.java:22`; no other source file references it | None — no functional impact | Low | Future dead-code review |
 | TD-003 | `production` alias has no dedicated `.properties` file | Phase 4 report; `production.properties` not created (outside Phase 4 scope) | Low — falls back to `config.properties` | Low | Dedicated configuration file phase |
-| TD-004 | Selenium Grid `chrome-node` has no health-check gate | `docker-compose.grid.yml` inspection; `depends_on` uses start-order only | Low — may cause first-run Grid failures; documented in README | Medium | Grid readiness enhancement phase |
+| TD-004 | ~~Selenium Grid `chrome-node` has no health-check gate~~ | Resolved in Phase 9 — health-check cascade implemented; `scripts/wait-for-grid.ps1` added | None | — | Resolved |
 | TD-005 | No test-data cleanup for positive registration scenarios | `Hooks.tryBrowserRegistration()` and `ExcelDataProvider` generate unique usernames with no delete operation | Low — accumulates on public AUT only; no private deployment | Low | Private deployment or cleanup phase |
 
 ---
@@ -417,7 +426,7 @@ report layer or use Cucumber ignore annotations, but both approaches reduce diag
 | Phase 7 (current) | Quality risk documentation | All risks identified and classified |
 | Future: Configuration cleanup | Remove orphaned `implicitWait` keys; create `production.properties` | TD-001, TD-003, QR-005 |
 | Future: Dead code review | Classify and remove `POLLING_INTERVAL_MILLIS` if confirmed dead | TD-002, QR-007 |
-| Future: Grid readiness | Add Chrome Node health check in `docker-compose.grid.yml` | TD-004, QR-008 |
+| ~~Future: Grid readiness~~ | ~~Add Chrome Node health check in `docker-compose.grid.yml`~~ | Completed in Phase 9 — TD-004 resolved, QR-008 mitigated |
 | Future: Coverage expansion | Feature files for 5 implemented page objects | TestD-004, TestD-005 |
 | Future: Private deployment | Eliminate shared-server data accumulation and AUT-LIM-002 | QR-004, TD-005, QR-003 |
 

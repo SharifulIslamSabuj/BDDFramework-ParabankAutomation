@@ -551,3 +551,29 @@ When adding code, update documentation before closing the pull request:
 | Architecture change | README Architecture sections; TEST_STRATEGY architecture layer |
 
 Do not modify historical phase reports in `docs/review/`. They are point-in-time evidence records.
+
+---
+
+## Grid and Remote Driver Validation
+
+If a change touches `DriverFactory`, `ConfigManager` remote properties, or `docker-compose.grid.yml`,
+run Grid validation before merge:
+
+```powershell
+# 1. Start Grid
+docker compose -f docker-compose.grid.yml up -d selenium-hub chrome-node
+
+# 2. Wait for readiness
+.\scripts\wait-for-grid.ps1
+
+# 3. Smoke test — one scenario
+./gradlew clean test -DseleniumGridEnabled=true -DgridUrl=http://localhost:4444/wd/hub -Dcucumber.filter.tags=@smoke
+
+# 4. Confirm full regression (optional but required for infrastructure changes)
+./gradlew clean test -DseleniumGridEnabled=true -DgridUrl=http://localhost:4444/wd/hub
+
+# 5. Tear down
+docker compose -f docker-compose.grid.yml down -v --remove-orphans
+```
+
+See [docs/SELENIUM_GRID_GUIDE.md](SELENIUM_GRID_GUIDE.md) for the complete reference.

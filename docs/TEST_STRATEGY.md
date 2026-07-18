@@ -145,7 +145,7 @@ Tests run in parallel by default via TestNG's `@DataProvider(parallel=true)`.
 |---|---|---|
 | Local development | 3 (default) | Balanced for developer machines |
 | GitHub Actions CI | 1 | Avoids resource contention on 2-vCPU runners |
-| Docker + Grid | 3 | Grid nodes handle parallelism in separate containers |
+| Docker + Grid | 1 (compose default) | `docker-compose.grid.yml` sets `DATA_PROVIDER_THREAD_COUNT=1`; host-side default is 2 (build.gradle); chrome-node supports 2 concurrent sessions (`SE_NODE_MAX_SESSIONS=2`) |
 
 ---
 

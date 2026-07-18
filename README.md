@@ -279,25 +279,24 @@ The compose file maps `build/reports`, `build/screenshots`, `build/logs`, and
 ### 3. Selenium Grid Execution
 
 Grid execution routes WebDriver commands through the Selenium Hub to a Chrome Node.
-The automation container does **not** need Chrome — only the Node container does.
+A health-check cascade in `docker-compose.grid.yml` ensures the Hub and Chrome Node are
+both ready before tests start. See [docs/SELENIUM_GRID_GUIDE.md](docs/SELENIUM_GRID_GUIDE.md)
+for the complete workflow, configuration reference, and failure diagnostics.
 
-```bash
-# Start Hub + Chrome Node + run tests (all in one command)
-docker compose -f docker-compose.grid.yml up --build
+**Quick start (host-side execution):**
 
-# Override environment
-ENV=qa docker compose -f docker-compose.grid.yml up --build
+```powershell
+# 1. Start Hub and Chrome Node
+docker compose -f docker-compose.grid.yml up -d selenium-hub chrome-node
 
-# Clean up
-docker compose -f docker-compose.grid.yml down
-```
+# 2. Wait for Grid readiness (exits 0 when a node is registered)
+.\scripts\wait-for-grid.ps1
 
-Run tests against an **already-running** grid (e.g. a shared CI grid):
+# 3. Run tests via RemoteWebDriver
+./gradlew clean test -DseleniumGridEnabled=true -DgridUrl=http://localhost:4444/wd/hub
 
-```bash
-./gradlew clean test \
-  -DseleniumGridEnabled=true \
-  -DgridUrl=http://selenium-hub:4444/wd/hub
+# 4. Clean up
+docker compose -f docker-compose.grid.yml down -v --remove-orphans
 ```
 
 **Grid Console UI:** `http://localhost:4444/ui`
@@ -1066,6 +1065,7 @@ These are the established baseline. Framework changes do not affect this count.
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor setup, branch workflow, validation baseline, and documentation obligations |
 | [docs/FRAMEWORK_EXTENSION_GUIDE.md](docs/FRAMEWORK_EXTENSION_GUIDE.md) | Architecture boundaries, layer rules, locator/wait standards, anti-patterns, and scenario workflow |
 | [docs/PULL_REQUEST_CHECKLIST.md](docs/PULL_REQUEST_CHECKLIST.md) | Copyable PR submission checklist with validation evidence template |
+| [docs/SELENIUM_GRID_GUIDE.md](docs/SELENIUM_GRID_GUIDE.md) | Selenium Grid startup, readiness verification, host-side execution, failure diagnostics, and teardown |
 | [docs/TEST_STRATEGY.md](docs/TEST_STRATEGY.md) | Test strategy, tag model, environment model, and execution guidance |
 | [docs/QUALITY_RISK_ASSESSMENT.md](docs/QUALITY_RISK_ASSESSMENT.md) | Evidence-based risk register, technical debt, test debt, and release interpretation |
 | [docs/KNOWN_AUT_LIMITATIONS.md](docs/KNOWN_AUT_LIMITATIONS.md) | Records and analysis of the 6 known AUT failures — why they occur and why they remain active |

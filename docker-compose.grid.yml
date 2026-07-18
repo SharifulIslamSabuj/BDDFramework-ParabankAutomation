@@ -30,12 +30,18 @@ services:
       - "4444:4444"    # Grid console + WebDriver endpoint (/wd/hub)
       - "4442:4442"    # Event bus (publish)
       - "4443:4443"    # Event bus (subscribe)
+    # Hub health check: verify the HTTP server is accepting connections.
+    # Selenium 4 reports "ready":false until a node registers; checking
+    # only HTTP liveness here avoids a chicken-and-egg deadlock where
+    # chrome-node cannot start until the hub is healthy but the hub needs
+    # a registered node to report ready.  Actual Grid readiness (with a
+    # registered browser node) is verified by the chrome-node health check.
     healthcheck:
-      test: ["CMD", "/bin/sh", "-c", "curl -fsSL http://localhost:4444/wd/hub/status | grep -q '\"ready\":true'"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
+      test: ["CMD", "curl", "-f", "http://localhost:4444/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
   # ── Chrome Node ──────────────────────────────────────────
   # Browser executor: registers with the hub and handles
@@ -55,6 +61,16 @@ services:
         condition: service_healthy
     ports:
       - "7900:7900"    # noVNC live view (password: secret)
+    # Confirms the node process is up AND has registered with the hub.
+    # The node's /status endpoint returns HTTP 200 only after successful
+    # registration; curl -f exits non-zero on any non-2xx response.
+    # This gates selenium-tests startup on actual node availability.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
   # ── Automation Tests ─────────────────────────────────────
   # Runs the BDD suite using RemoteWebDriver against the Hub.
@@ -66,7 +82,8 @@ services:
     image: parabank-bdd:latest
     container_name: parabank-bdd-grid-tests
     depends_on:
-      - chrome-node
+      chrome-node:
+        condition: service_healthy
     environment:
       - ENV=${ENV:-qa}
       - BROWSER=chrome
