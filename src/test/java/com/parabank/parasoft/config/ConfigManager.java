@@ -131,18 +131,6 @@ public class ConfigManager {
     }
 
     /**
-     * Gets implicit wait timeout in seconds.
-     * Note: implicit waits are intentionally disabled in this framework; all waits use explicit WebDriverWait.
-     * This value is available for informational purposes and future use.
-     * Defaults to {@link TimeoutConstants#IMPLICIT_WAIT_TIME} when not set in properties.
-     *
-     * @return timeout in seconds
-     */
-    public int getImplicitWait() {
-        return getInt("implicitWait", TimeoutConstants.IMPLICIT_WAIT_TIME);
-    }
-
-    /**
      * Gets page load timeout in seconds.
      * Defaults to {@link TimeoutConstants#PAGE_LOAD_TIMEOUT} when not set in properties.
      *

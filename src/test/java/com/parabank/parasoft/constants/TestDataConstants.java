@@ -18,9 +18,6 @@ public final class TestDataConstants {
     public static final String TAG_REGRESSION = "@regression";
     public static final String TAG_NEGATIVE   = "@negative";
     public static final String TAG_POSITIVE   = "@positive";
-    public static final String TAG_HARDCODED  = "@hardcoded";
-    public static final String TAG_LOREM      = "@ipsum";
-    public static final String TAG_DDT        = "@ddt";
 
     /**
      * Default Cucumber tag expression applied when -Dcucumber.filter.tags is not

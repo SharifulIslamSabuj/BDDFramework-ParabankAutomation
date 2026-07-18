@@ -9,10 +9,8 @@ public final class TimeoutConstants {
 
     private TimeoutConstants() {}
 
-    // ===== Explicit / implicit waits (seconds) =====
+    // ===== Explicit waits (seconds) =====
     public static final int EXPLICIT_WAIT_TIME        = 30;
-    public static final int IMPLICIT_WAIT_TIME        = 20;
-    public static final int ELEMENT_FINDING_TIMEOUT   = 15;
     public static final int PAGE_LOAD_TIMEOUT         = 45;
     public static final int FLUENT_WAIT_POLLING_INTERVAL = 2;
 
@@ -22,5 +20,4 @@ public final class TimeoutConstants {
 
     // ===== Millisecond intervals =====
     public static final long POLLING_INTERVAL_MILLIS  = 500L;
-    public static final long SCREENSHOT_DELAY_MILLIS  = 1000L;
 }
