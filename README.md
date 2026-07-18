@@ -50,6 +50,7 @@ A quick reference for technical reviewers and hiring managers.
 - [Docker Support](#docker-support)
 - [GitHub Actions CI](#github-actions-ci)
 - [Troubleshooting](#troubleshooting)
+- [Quality and Risk Documentation](#quality-and-risk-documentation)
 
 ---
 
@@ -1055,6 +1056,17 @@ These are the established baseline. Framework changes do not affect this count.
 6. **One assertion focus per scenario** — keep `@Then` steps specific
 7. **MDC logging** — add `scenarioName` to all log calls via Logback MDC
 8. **Page objects over raw driver calls** — never call `driver.findElement()` in step definitions or hooks
+
+---
+
+## Quality and Risk Documentation
+
+| Document | Description |
+|---|---|
+| [docs/QUALITY_RISK_ASSESSMENT.md](docs/QUALITY_RISK_ASSESSMENT.md) | Evidence-based risk register, technical debt, test debt, and release interpretation |
+| [docs/KNOWN_AUT_LIMITATIONS.md](docs/KNOWN_AUT_LIMITATIONS.md) | Records and analysis of the 6 known AUT failures — why they occur and why they remain active |
+| [docs/TEST_STRATEGY.md](docs/TEST_STRATEGY.md) | Test strategy, tag model, environment model, and execution guidance |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor setup, code standards, and submission checklist |
 
 ---
 

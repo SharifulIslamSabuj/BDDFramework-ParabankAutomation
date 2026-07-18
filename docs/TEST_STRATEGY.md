@@ -7,6 +7,15 @@
 
 ---
 
+## Related Documents
+
+| Document | Purpose |
+|---|---|
+| [QUALITY_RISK_ASSESSMENT.md](QUALITY_RISK_ASSESSMENT.md) | Risk register, technical debt, test debt, and release interpretation |
+| [KNOWN_AUT_LIMITATIONS.md](KNOWN_AUT_LIMITATIONS.md) | Detailed records of the 6 known AUT failures |
+
+---
+
 ## 1. Why BDD?
 
 Behaviour-Driven Development with Gherkin was chosen over plain JUnit/TestNG for three reasons:
