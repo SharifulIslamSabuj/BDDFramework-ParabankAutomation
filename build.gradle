@@ -46,12 +46,7 @@ dependencies {
 
     // Utilities
     testImplementation 'commons-io:commons-io:2.15.1'
-    testImplementation 'com.github.javafaker:javafaker:1.0.2'
     testImplementation 'com.thedeanda:lorem:2.2'
-
-    // Lombok
-    compileOnly 'org.projectlombok:lombok:1.18.30'
-    annotationProcessor 'org.projectlombok:lombok:1.18.30'
 }
 
 configurations {
