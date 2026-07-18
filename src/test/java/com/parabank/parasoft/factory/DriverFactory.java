@@ -4,6 +4,7 @@ import com.parabank.parasoft.config.ConfigManager;
 import com.parabank.parasoft.constants.BrowserConstants;
 import com.parabank.parasoft.exceptions.DriverInitializationException;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -218,8 +219,9 @@ public class DriverFactory {
         driver.manage().timeouts()
                 .pageLoadTimeout(Duration.ofSeconds(configManager.getPageLoadTimeout()));
 
-        // Maximize window
-        driver.manage().window().maximize();
+        // Set window size explicitly — maximize() uses CDP Runtime.evaluate which fails
+        // on Xvfb (no window manager). setSize() uses the W3C Set Window Rect command directly.
+        driver.manage().window().setSize(new Dimension(1920, 1080));
 
         // Navigate to base URL
         String baseUrl = configManager.getBaseUrl();
