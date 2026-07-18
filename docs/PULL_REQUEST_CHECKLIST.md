@@ -127,6 +127,16 @@ Classification options:
 
 ---
 
+## CI Classification
+
+If this PR changes the expected execution count or the known-failure set, update `scripts/analyze-test-results.sh`:
+
+- [ ] `EXPECTED_CUCUMBER` reflects the new total execution count (currently 18).
+- [ ] `KNOWN_FAILURE_INDICES` reflects the new known-failure set (currently `{9,10,11,13,14,15}`).
+- [ ] The CI badge is expected to be: [ `VALIDATED_BASELINE` (green) / `UNEXPECTED_REGRESSION` until AUT fixes / other — explain ]
+
+---
+
 ## Documentation
 
 - [ ] `README.md` was updated if a user-facing behaviour, execution count, or tag changed.

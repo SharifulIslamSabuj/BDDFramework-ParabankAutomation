@@ -8,6 +8,7 @@ improvements. Read this document before starting work.
 - [docs/PULL_REQUEST_CHECKLIST.md](docs/PULL_REQUEST_CHECKLIST.md) — submission checklist with validation evidence template
 - [docs/KNOWN_AUT_LIMITATIONS.md](docs/KNOWN_AUT_LIMITATIONS.md) — the 6 expected test failures and why they exist
 - [docs/QUALITY_RISK_ASSESSMENT.md](docs/QUALITY_RISK_ASSESSMENT.md) — risk register and technical/test debt
+- [docs/CI_CD_GUIDE.md](docs/CI_CD_GUIDE.md) — CI pipeline stages and result classification
 
 ---
 
@@ -139,6 +140,8 @@ Run these in order before submitting a pull request:
 ## Baseline and Failure Classification
 
 **Accepted baseline:** 18 Cucumber executions — 12 passed, 6 known AUT failures, 0 unexpected.
+
+**CI classification:** GitHub Actions classifies each run automatically. A run matching exactly the 6 known failures is `VALIDATED_BASELINE` and the job is **green**. Any deviation — extra failure, missing failure, or count mismatch — is `UNEXPECTED_REGRESSION` and the job is **red**. The job summary panel in the Actions UI always shows the classification result. See [docs/CI_CD_GUIDE.md](docs/CI_CD_GUIDE.md) for details.
 
 If the full regression shows more than 6 failures:
 

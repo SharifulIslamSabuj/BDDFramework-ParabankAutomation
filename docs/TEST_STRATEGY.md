@@ -149,7 +149,24 @@ Tests run in parallel by default via TestNG's `@DataProvider(parallel=true)`.
 
 ---
 
-## 7. Known Failures and Baseline
+## 7. CI Execution Stages
+
+The GitHub Actions pipeline runs test execution in three gated stages before classification:
+
+| Stage | Command | Fail behaviour |
+|---|---|---|
+| Compile | `./gradlew compileTestJava` | Job fails immediately — no test runs |
+| Production-safety tests | `./gradlew test --tests "*ProductionSafetyGuardTest"` | Job fails immediately — Cucumber suite skipped |
+| Full Cucumber regression | `xvfb-run ./gradlew clean test -Denv=qa` | Exit code captured; step always exits 0 |
+| Classify | `scripts/analyze-test-results.sh` | Job outcome determined here |
+
+The classifier compares JUnit XML results to the accepted baseline. The CI badge is **green only when the result is `VALIDATED_BASELINE`** — meaning exactly `{runScenario[9,10,11,13,14,15]}` failed and no other deviations exist. Any other outcome (unexpected failure, count mismatch, missing reports) produces a red badge.
+
+For full CI pipeline details, see [CI_CD_GUIDE.md](CI_CD_GUIDE.md).
+
+---
+
+## 8. Known Failures and Baseline
 
 The following 6 scenarios consistently fail against the public ParaBank demo server. These are **server-side issues, not framework defects**.
 
@@ -174,7 +191,7 @@ framework regression.
 
 ---
 
-## 8. Focused Framework Tests
+## 9. Focused Framework Tests
 
 In addition to Cucumber BDD scenarios, the framework includes a set of non-Cucumber, non-browser focused
 tests that verify framework internals deterministically.
@@ -194,7 +211,7 @@ These tests:
 
 ---
 
-## 9. Future Test Expansion
+## 10. Future Test Expansion
 
 Five page objects are fully implemented and ready for feature file coverage:
 
@@ -210,7 +227,7 @@ Adding feature coverage for these pages would expand the test suite from 18 to a
 
 ---
 
-## 10. Risk Register
+## 11. Risk Register
 
 | Risk | Likelihood | Mitigation |
 |---|---|---|

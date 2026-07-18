@@ -4,7 +4,14 @@
 # Triggers : push, pull_request, manual (workflow_dispatch)
 # Runner   : ubuntu-latest
 # Browser  : Google Chrome via Xvfb virtual display
-# Build    : Gradle Wrapper (./gradlew clean test)
+# Build    : Gradle Wrapper (./gradlew)
+#
+# Job stages
+#   1. Compile          — fail fast on compilation errors
+#   2. Safety tests     — 12 focused framework tests; no browser
+#   3. Full regression  — 18 Cucumber scenarios; exit code captured
+#   4. Classify         — compares results to accepted baseline;
+#                         exits 0 only for VALIDATED_BASELINE
 # ============================================================
 
 name: ParaBank BDD Automation Tests
@@ -29,12 +36,16 @@ on:
           - qa
           - staging
           - uat
-          - prod
+        # prod is intentionally absent — CI does not execute against production
 
-# Cancel any in-flight run on the same branch when a new commit arrives
+permissions:
+  contents: read
+
+# Cancel in-progress runs on PRs and feature branches.
+# Main branch runs are never cancelled — they are the authoritative record.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   selenium-bdd-tests:
@@ -92,88 +103,107 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      # ── 7. Test execution ─────────────────────────────────────────────
-      #    Wrapped in xvfb-run to supply the X11 display Chrome needs.
-      #    -Denv passes the environment to ConfigManager (System.getProperty).
-      #    -Dbrowser=chrome matches the existing FrameworkConstants.
-      #    Exit code is preserved — the job fails on test failures (correct
-      #    CI signal), but artifact upload steps run regardless via if:always()
-      - name: Run Selenium BDD tests (${{ env.TEST_ENV }})
+      # ── 7. Compile gate ───────────────────────────────────────────────
+      #    Surfaces compilation errors immediately without executing tests.
+      #    Failure here stops the job before any browser or AUT contact.
+      - name: Compile
+        run: ./gradlew compileTestJava
+
+      # ── 8. Production-safety gate ────────────────────────────────────
+      #    12 focused tests — no browser, no network, no AUT contact.
+      #    Verifies ConfigManager production detection and write guard.
+      #    Must pass before any scenario execution begins.
+      - name: Production-safety tests
+        run: ./gradlew test --tests "*ProductionSafetyGuardTest"
+
+      # ── 9. Full Cucumber regression ───────────────────────────────────
+      #    The Gradle exit code is captured and written to step output.
+      #    This step always exits 0 — the classify step (step 10) is the
+      #    final gate that decides the overall job result.
+      - name: Full regression — Selenium BDD tests (${{ env.TEST_ENV }})
+        id: regression
         run: |
+          set +e
           xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" \
             ./gradlew clean test \
             -Denv=${{ env.TEST_ENV }} \
             -Dbrowser=chrome \
             -DmaxParallelForks=1 \
             -Ddataproviderthreadcount=1
+          GRADLE_EXIT=$?
+          echo "gradle_exit=$GRADLE_EXIT" >> "$GITHUB_OUTPUT"
+          exit 0
 
       # ══════════════════════════════════════════════════════════════════
       # ARTIFACT COLLECTION — all run even when tests fail (if: always())
       # ══════════════════════════════════════════════════════════════════
 
-      # ── 8a. Test logs (rolling Logback output) ────────────────────────
+      # ── 10a. Test logs (rolling Logback output) ───────────────────────
       - name: Upload test logs
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-logs-${{ env.TEST_ENV }}-run${{ github.run_number }}
           path: build/logs/
-          retention-days: 30
+          retention-days: 14
           if-no-files-found: warn
 
-      # ── 8b. Failure screenshots ───────────────────────────────────────
+      # ── 10b. Failure screenshots ──────────────────────────────────────
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: screenshots-${{ env.TEST_ENV }}-run${{ github.run_number }}
           path: build/screenshots/
-          retention-days: 30
+          retention-days: 14
           if-no-files-found: warn
 
-      # ── 8c. ExtentReports HTML ────────────────────────────────────────
+      # ── 10c. ExtentReports HTML ───────────────────────────────────────
       - name: Upload Extent Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: extent-report-${{ env.TEST_ENV }}-run${{ github.run_number }}
           path: build/reports/extent/
-          retention-days: 30
+          retention-days: 14
           if-no-files-found: warn
 
-      # ── 8d. Allure raw results (for Allure report generation) ─────────
+      # ── 10d. Allure raw results (for Allure report generation) ────────
       - name: Upload Allure results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: allure-results-${{ env.TEST_ENV }}-run${{ github.run_number }}
           path: allure-results/
-          retention-days: 30
+          retention-days: 14
           if-no-files-found: warn
 
-      # ── 8e. TestNG / Cucumber HTML reports ───────────────────────────
+      # ── 10e. TestNG / Cucumber HTML reports ──────────────────────────
       - name: Upload TestNG reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: testng-reports-${{ env.TEST_ENV }}-run${{ github.run_number }}
           path: build/reports/tests/
-          retention-days: 30
+          retention-days: 14
           if-no-files-found: warn
 
-      # ── 9. Job summary ────────────────────────────────────────────────
-      - name: Write job summary
+      # ── 11. Classify results and write job summary ────────────────────
+      #    Parses build/test-results/test/TEST-*.xml against the accepted
+      #    known-failure baseline.
+      #
+      #    VALIDATED_BASELINE     → exit 0  (job green)
+      #    UNEXPECTED_REGRESSION  → exit 1  (job red)
+      #    INFRASTRUCTURE_FAILURE → exit 2  (job red)
+      #    RESULTS_UNAVAILABLE    → exit 3  (job red)
+      #
+      #    The job summary is written here regardless of outcome so that
+      #    the Actions UI always shows classification details.
+      - name: Classify results and write job summary
         if: always()
+        env:
+          GRADLE_EXIT_CODE: ${{ steps.regression.outputs.gradle_exit }}
+          TEST_ENV_LABEL: ${{ env.TEST_ENV }}
         run: |
-          echo "## ParaBank BDD Test Run" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Property      | Value |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| ------------- | ----- |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Environment   | \`${{ env.TEST_ENV }}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Browser       | Chrome (Xvfb virtual display) |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Trigger       | \`${{ github.event_name }}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Branch        | \`${{ github.ref_name }}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Commit        | \`${{ github.sha }}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Run number    | #${{ github.run_number }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Artifacts are available in the **Actions → Artifacts** panel." >> "$GITHUB_STEP_SUMMARY"
+          chmod +x scripts/analyze-test-results.sh
+          scripts/analyze-test-results.sh

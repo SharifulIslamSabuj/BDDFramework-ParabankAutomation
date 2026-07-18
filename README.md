@@ -22,7 +22,7 @@ A quick reference for technical reviewers and hiring managers.
 | **Wait Strategy** | Explicit waits only via `WaitUtils` and `WebDriverWait` — zero `Thread.sleep()` in the codebase |
 | **API Integration** | Java 17 `HttpClient` for API-first test data setup (`ParaBankApiClient`) with browser fallback |
 | **Infrastructure** | Docker (multi-stage Dockerfile + Compose), Selenium Grid 4 (Hub + Chrome Node + noVNC) |
-| **CI/CD** | GitHub Actions pipeline — Xvfb virtual display, artifact upload, concurrency cancel-in-progress |
+| **CI/CD** | GitHub Actions pipeline — compile gate, safety gate, Xvfb regression, result classification (VALIDATED_BASELINE / UNEXPECTED_REGRESSION), artifact upload |
 | **Configuration** | 4-level priority chain (JVM property → env var → properties file → default), 4 environments |
 | **Security** | No credentials in source; env-var / GitHub Secrets integration; passwords never logged |
 | **Exception Handling** | Typed custom hierarchy (`FrameworkException` → `WaitException`, `DriverInitializationException`, etc.) |
@@ -918,6 +918,8 @@ docker run --rm \
 
 ## GitHub Actions CI
 
+For full details, see [docs/CI_CD_GUIDE.md](docs/CI_CD_GUIDE.md).
+
 ### Workflow file
 
 ```
@@ -929,28 +931,35 @@ docker run --rm \
 | Trigger | Condition |
 |---|---|
 | `push` | `main` or `develop` branch |
-| `pull_request` | targeting `main` or `develop` |
-| `workflow_dispatch` | Manual run from **Actions** tab |
+| `pull_request` | Targeting `main` or `develop` |
+| `workflow_dispatch` | Manual run — `qa`, `staging`, `uat` |
+
+### Pipeline stages
+
+| Stage | Command | Behaviour |
+|---|---|---|
+| Compile | `./gradlew compileTestJava` | Fail fast — no tests run on error |
+| Production-safety tests | `./gradlew test --tests "*ProductionSafetyGuardTest"` | 12 tests; no browser; fail fast |
+| Full regression | `xvfb-run ./gradlew clean test` | 18 Cucumber scenarios; exit code captured |
+| Classify + summary | `scripts/analyze-test-results.sh` | Final gate — see table below |
+
+### CI classification
+
+| Result | Meaning | Badge |
+|---|---|---|
+| `VALIDATED_BASELINE` | Exactly the 6 known AUT failures — no regression | Green |
+| `UNEXPECTED_REGRESSION` | Different or additional failures | Red |
+| `INFRASTRUCTURE_FAILURE` | Cucumber suite did not execute | Red |
+| `RESULTS_UNAVAILABLE` | No JUnit XML produced | Red |
+
+A green CI badge means the run matched the accepted known-failure baseline exactly.
 
 ### Manual execution
 
 1. Go to **Actions → ParaBank BDD Automation Tests**
 2. Click **Run workflow**
-3. Select the target environment (`qa`, `staging`, `uat`, `prod`)
+3. Select the target environment (`qa`, `staging`, or `uat`)
 4. Click **Run workflow**
-
-### Pipeline steps
-
-| Step | Details |
-|---|---|
-| Checkout | Full repository clone |
-| Java 17 (Temurin) | JDK + Gradle dependency cache |
-| Gradle wrapper validation | Verifies wrapper JAR checksum |
-| Chrome stable | Installs / pins Google Chrome |
-| Xvfb | 1920×1080 virtual X11 display |
-| `./gradlew clean test` | BDD suite wrapped in `xvfb-run` |
-| Artifact upload | Reports, screenshots, logs — even on failure |
-| Job summary | Run details written to Actions UI |
 
 ### Credentials in CI
 
@@ -962,17 +971,17 @@ If secrets are not configured, the pipeline falls back to `qa.properties` values
 
 ### Concurrency
 
+Main branch runs are never cancelled. PR and feature branch runs cancel on new push:
+
 ```yaml
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 ```
-
-A new push to the same branch cancels any in-progress run for that branch — avoids queuing stale runs.
 
 ### Artifacts
 
-Each run produces named artifacts in the **Artifacts** panel (retained 30 days):
+Each run produces named artifacts in the **Artifacts** panel (retained 14 days):
 
 | Artifact | Contents |
 |---|---|

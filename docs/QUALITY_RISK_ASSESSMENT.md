@@ -116,7 +116,7 @@ is applied where evidence modifies the matrix-derived rating, and the rationale 
 | QR-006 | Configuration | Orphaned `implicitWait` property in 5 config files | Low | Low | Low | No loader reads it; harmless | Accepted |
 | QR-007 | Configuration | `POLLING_INTERVAL_MILLIS` constant — no active caller | Low | Low | Low | Constant exists; unused; no functional impact | Deferred |
 | QR-008 | Infrastructure | Selenium Grid — `selenium-tests` depends on `chrome-node` without health-check gate | Low | Medium | Low | Health-check cascade implemented in Phase 9; `chrome-node` must be healthy before `selenium-tests` starts | Mitigated |
-| QR-009 | CI/CD | Known failures cause GitHub Actions job to report failure status | High | Low | Medium | Accurately signals AUT deviation; documented in all guidance | Accepted |
+| QR-009 | CI/CD | Known failures cause GitHub Actions job to report failure status | High | Low | Medium | Result classifier distinguishes known baseline from unexpected regression; job is green for VALIDATED_BASELINE | Mitigated |
 | QR-010 | Security | Production write guard scope — read-only scenario writes not covered | Low | Low | Low | Guard targets setup writes only; documented limitation | Accepted |
 | QR-011 | Test Design | Limited browser coverage — Chrome only in CI | Medium | Low | Low | Local execution supports Firefox/Edge; CI scoped to Chrome | Deferred |
 | QR-012 | Maintainability | `DEFAULT_USER_SETUP_DONE` is JVM-static; cannot reset between test-class runs in same JVM | Low | Low | Low | Only one Cucumber suite per JVM; not a parallel concern | Accepted |
@@ -328,37 +328,46 @@ in practice and cannot be eliminated without retrying at the session level.
 ### QR-009 — Known Failures Cause CI Job to Report Non-Zero Exit Status
 
 **Category:** CI/CD  
-**Likelihood:** High — occurs on every run  
+**Likelihood:** High — Gradle exits non-zero on every run due to 6 known AUT failures  
 **Impact:** Low — accurately reflects AUT limitations; not a false negative  
 **Rating:** Medium
 
 **Description:**  
 The GitHub Actions workflow runs `./gradlew clean test`. Because 6 Cucumber scenarios fail,
-TestNG reports failures, Gradle exits with a non-zero code, and the CI job is marked as failed.
-This means a "passing" build is not achievable while the known AUT failures exist and test
-suppression is deliberately avoided.
+TestNG reports failures and Gradle exits with a non-zero code. Before Phase 10, this caused
+the CI job to permanently show a red badge regardless of whether the failures were the
+expected known-AUT set or a new unexpected regression.
 
 **Evidence:**  
 Gradle exits with `BUILD FAILED in 2m 26s` and `30 tests completed, 6 failed` on every
 validated run. The CI workflow uses `if: always()` for artifact upload to ensure reports are
 available regardless of job outcome.
 
-**Current controls:**  
-- All artifacts uploaded regardless of job status (`if: always()`)
-- README and TEST_STRATEGY.md explain the 6-failure baseline clearly
-- Known failures are never the result of a framework regression
+**Phase 10 mitigation — result classification:**  
+`scripts/analyze-test-results.sh` parses `build/test-results/test/TEST-*.xml` and compares
+the failing test indices to the accepted baseline `{runScenario[9,10,11,13,14,15]}`.
+
+| Classification | CI outcome |
+|---|---|
+| `VALIDATED_BASELINE` — exactly the 6 known failures | **Job green** |
+| `UNEXPECTED_REGRESSION` — different or additional failures | **Job red** |
+| `INFRASTRUCTURE_FAILURE` — Cucumber suite did not execute | **Job red** |
+| `RESULTS_UNAVAILABLE` — no JUnit XML found | **Job red** |
+
+The classifier is the final step in the pipeline. It writes a structured summary to the
+GitHub Actions job summary panel on every run.
 
 **Residual risk:**  
-Contributors unfamiliar with the baseline may misinterpret a red CI badge as a framework defect.
-Documentation is the primary mitigation.
+The classifier reads the accepted failure set as a hard-coded `frozenset` in the script.
+If a new scenario is added, the expected counts must be updated in the script. Failure to
+do so would cause `UNEXPECTED_REGRESSION` on the first green run of the new scenario.
 
 **Recommended action:**  
-Accept. The current approach — failing the build on test failures — is the most accurate
-representation of AUT behaviour. An alternative is to separate known failures into a distinct
-report layer or use Cucumber ignore annotations, but both approaches reduce diagnostic clarity.
+When the expected Cucumber execution count or the known-failure set changes, update
+`KNOWN_FAILURE_INDICES` and `EXPECTED_CUCUMBER` in `scripts/analyze-test-results.sh`.
 
-**Owner:** Framework maintainer (documentation only)  
-**Status:** Accepted
+**Owner:** Framework maintainer  
+**Status:** Mitigated (Phase 10)
 
 ---
 
@@ -371,7 +380,7 @@ report layer or use Cucumber ignore annotations, but both approaches reduce diag
 | QR-004 | Test data accumulation | No cleanup API on public AUT; idempotent registration handles sqa user | No current functional impact | Server quota or throttling observed |
 | QR-005 | `production` alias — no `.properties` file | Guard protects writes; one-line config change if needed | Low probability of use | `-Denv=production` is used in CI or production workflow |
 | QR-006 | Orphaned `implicitWait` property | No code reads it; harmless; removing 5 files offered zero benefit | None | Another review phase targets configuration files |
-| QR-009 | CI red badge on known failures | Accurately signals AUT deviation; masking would reduce diagnostic value | No framework defect hidden | Known failures resolved in AUT |
+| QR-009 | CI red badge on known failures | **Mitigated in Phase 10** — result classifier distinguishes known from unexpected; job is green for VALIDATED_BASELINE | No unexpected regression masked | Classifier known-failure set updated when baseline changes |
 | QR-010 | Production guard scope (setup writes only) | Scenario-step writes to AUT are intentional test actions; guard targets automated setup | Clearly documented scope | Guard expansion required by new write-capable hooks |
 | QR-012 | Static `DEFAULT_USER_SETUP_DONE` flag | One Cucumber suite per JVM; not a parallel or multi-suite concern | No observed issue | Multiple suite classes in same JVM introduced |
 | QR-013 | No registration cleanup | Public AUT has no cleanup API; idempotent handling in place | No observed impact | Server-side quota or rejection observed |
