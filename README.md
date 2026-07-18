@@ -1063,10 +1063,12 @@ These are the established baseline. Framework changes do not affect this count.
 
 | Document | Description |
 |---|---|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor setup, branch workflow, validation baseline, and documentation obligations |
+| [docs/FRAMEWORK_EXTENSION_GUIDE.md](docs/FRAMEWORK_EXTENSION_GUIDE.md) | Architecture boundaries, layer rules, locator/wait standards, anti-patterns, and scenario workflow |
+| [docs/PULL_REQUEST_CHECKLIST.md](docs/PULL_REQUEST_CHECKLIST.md) | Copyable PR submission checklist with validation evidence template |
+| [docs/TEST_STRATEGY.md](docs/TEST_STRATEGY.md) | Test strategy, tag model, environment model, and execution guidance |
 | [docs/QUALITY_RISK_ASSESSMENT.md](docs/QUALITY_RISK_ASSESSMENT.md) | Evidence-based risk register, technical debt, test debt, and release interpretation |
 | [docs/KNOWN_AUT_LIMITATIONS.md](docs/KNOWN_AUT_LIMITATIONS.md) | Records and analysis of the 6 known AUT failures — why they occur and why they remain active |
-| [docs/TEST_STRATEGY.md](docs/TEST_STRATEGY.md) | Test strategy, tag model, environment model, and execution guidance |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor setup, code standards, and submission checklist |
 
 ---
 
