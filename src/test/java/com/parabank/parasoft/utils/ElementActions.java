@@ -4,6 +4,8 @@ import com.parabank.parasoft.exceptions.ElementInteractionException;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,11 +122,11 @@ public class ElementActions {
     public static boolean isDisplayed(WebDriver driver, By locator) {
         logger.debug("Checking if element is displayed: {}", locator);
         try {
-            WebElement element = driver.findElements(locator).isEmpty() ? null : driver.findElement(locator);
-            if (element == null) {
+            List<WebElement> elements = driver.findElements(locator);
+            if (elements.isEmpty()) {
                 return false;
             }
-            boolean displayed = element.isDisplayed();
+            boolean displayed = elements.get(0).isDisplayed();
             logger.debug("Element displayed: {}", displayed);
             return displayed;
         } catch (Exception e) {

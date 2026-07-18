@@ -14,8 +14,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * ScreenshotUtils - Screenshot capture and management utilities
@@ -28,6 +28,8 @@ public class ScreenshotUtils {
     private static final Logger logger = LoggerFactory.getLogger(ScreenshotUtils.class);
     private static final String SCREENSHOT_DIR = PathConstants.SCREENSHOTS_PATH;
     private static final String SCREENSHOT_EXTENSION = ".png";
+    private static final DateTimeFormatter SCREENSHOT_TIMESTAMP_FORMAT =
+            DateTimeFormatter.ofPattern(ReportConstants.TIMESTAMP_FORMAT);
 
     private ScreenshotUtils() {
         // Prevent instantiation
@@ -53,7 +55,7 @@ public class ScreenshotUtils {
     public static String captureScreenshot(WebDriver driver, String testName) {
         logger.info("Capturing screenshot for test: {}", testName);
         try {
-            String timestamp = new SimpleDateFormat(ReportConstants.TIMESTAMP_FORMAT).format(new Date());
+            String timestamp = LocalDateTime.now().format(SCREENSHOT_TIMESTAMP_FORMAT);
             String fileName = testName + "_" + timestamp + SCREENSHOT_EXTENSION;
             String filePath = SCREENSHOT_DIR + File.separator + fileName;
 

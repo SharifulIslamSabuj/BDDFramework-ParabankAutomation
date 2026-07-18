@@ -18,7 +18,7 @@ public class LoginPage extends BasePage {
 
     // ===== Private Locators =====
     private static final By USERNAME_INPUT = By.cssSelector("input[name='username']");
-    private static final By PASSWORD_INPUT = By.xpath("//input[@name='password']");
+    private static final By PASSWORD_INPUT = By.cssSelector("input[name='password']");
     private static final By LOGIN_BUTTON = By.cssSelector("input[value='Log In']");
     private static final By REGISTER_LINK = By.cssSelector("a[href='register.htm']");
     private static final By ERROR_MESSAGE = By.cssSelector("p.error");

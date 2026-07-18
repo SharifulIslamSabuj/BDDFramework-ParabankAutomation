@@ -34,9 +34,7 @@ public final class FrameworkConstants {
     //   - Blank credentials  → "Please enter a username and password."
     //   - All other failures → "The username and password could not be verified."
     public static final String ERROR_INVALID_CREDENTIALS    = "The username and password could not be verified.";
-    public static final String ERROR_EMPTY_USERNAME         = "Please enter a username and password.";
-    public static final String ERROR_EMPTY_PASSWORD         = "Please enter a username and password.";
-    public static final String ERROR_EMPTY_BOTH             = "Please enter a username and password.";
+    public static final String ERROR_MISSING_CREDENTIALS    = "Please enter a username and password.";
     public static final String ERROR_USERNAME_LENGTH        = "The username and password could not be verified.";
     public static final String ERROR_PASSWORD_LENGTH        = "The username and password could not be verified.";
     public static final String ERROR_INVALID_USERNAME_FORMAT = "The username and password could not be verified.";
