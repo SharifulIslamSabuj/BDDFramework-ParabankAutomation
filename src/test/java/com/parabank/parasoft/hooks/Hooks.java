@@ -115,6 +115,10 @@ public class Hooks {
             if (DEFAULT_USER_SETUP_DONE.get()) return;
 
             ConfigManager config = ConfigManager.getInstance();
+
+            // Safety guard: fail fast before any production write is attempted
+            config.guardAgainstProductionWrite("default test user registration");
+
             String baseUrl    = config.getBaseUrl();
             String testUsername = config.getUsername();
             String testPassword = config.getPassword();

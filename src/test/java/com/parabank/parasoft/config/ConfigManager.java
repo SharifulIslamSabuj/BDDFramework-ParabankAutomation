@@ -213,12 +213,28 @@ public class ConfigManager {
     }
 
     /**
-     * Checks if running on Production environment
+     * Checks if running on Production environment.
+     * Matches both "prod" and "production" (case-insensitive).
      *
      * @return true if Production environment
      */
     public boolean isProductionEnvironment() {
-        return TestDataConstants.ENV_PRODUCTION.equalsIgnoreCase(environment);
+        return "prod".equalsIgnoreCase(environment) || "production".equalsIgnoreCase(environment);
+    }
+
+    /**
+     * Throws {@link ConfigurationException} when called in a production environment.
+     * Use this at the entry point of any operation that would mutate application state.
+     *
+     * @param operation short description of the blocked operation, included in the error message
+     * @throws ConfigurationException when the current environment is production
+     */
+    public void guardAgainstProductionWrite(String operation) {
+        if (isProductionEnvironment()) {
+            throw new ConfigurationException(
+                    "Automatic test-data creation is disabled in the production environment. " +
+                    "Detected environment: '" + environment + "'. Blocked operation: " + operation + ".");
+        }
     }
 
     // ===== Reporting Configuration =====
