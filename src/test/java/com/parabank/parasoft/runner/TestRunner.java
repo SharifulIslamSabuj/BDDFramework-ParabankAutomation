@@ -16,7 +16,8 @@ import org.testng.annotations.Test;
  * <p>Override from the command line:
  * <pre>
  *   ./gradlew test -Dcucumber.filter.tags="@smoke"
- *   ./gradlew test -Dcucumber.filter.tags="@regression and not @ddt"
+ *   ./gradlew test -Dcucumber.filter.tags="@regression"
+ *   ./gradlew test -Dcucumber.filter.tags="@negative and @security"
  *   ./gradlew test -Dcucumber.filter.tags="@smoke or @regression"
  * </pre>
  *

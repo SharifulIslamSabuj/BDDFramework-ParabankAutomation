@@ -42,7 +42,9 @@ Scenario: Open a new savings account
   Then The new account ID should be displayed
 ```
 
-Tag selection: `@smoke` for critical happy paths, `@regression` for full coverage, `@negative` for invalid-input scenarios.
+Active tag selection: `@smoke` for critical happy paths, `@regression` for full coverage,
+`@positive` for happy-path variants, `@negative` for invalid-input scenarios,
+`@validation` for input and business-rule validation, `@security` for injection-probe scenarios.
 
 ### 2. Write the step definitions
 
@@ -108,6 +110,8 @@ The baseline must remain 18 tests with the same 6 known failures.
 - Never commit credentials to source — use `TEST_USERNAME` / `TEST_PASSWORD` environment variables
 - Never log passwords — only usernames may appear in log output
 - No real names, SSNs, or addresses in test data — use the `LoremIpsum` generator
+- Do not remove the production-write guard in `Hooks.ensureDefaultTestUserExists()` — it prevents
+  automatic test-data creation from running against `prod` or `production` environments
 
 ---
 

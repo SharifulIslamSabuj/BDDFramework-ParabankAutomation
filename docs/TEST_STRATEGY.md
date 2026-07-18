@@ -2,7 +2,8 @@
 
 **Framework:** ParaBank BDD Automation  
 **Application Under Test:** ParaBank Online Banking — [parabank.parasoft.com](https://parabank.parasoft.com/parabank/)  
-**Last Updated:** June 2026
+**Validated commit:** e118ac9  
+**Last Updated:** July 2026
 
 ---
 
@@ -45,20 +46,20 @@ All scenarios are tagged for flexible suite selection at runtime.
 | Tag | Purpose | When to Run |
 |---|---|---|
 | `@smoke` | Single critical happy-path; fast sanity check | Every push |
-| `@regression` | Full feature regression across all scenarios | Pre-release / nightly |
-| `@positive` | Happy-path variants with different data sources | Regression |
-| `@negative` | Boundary, invalid input, and security probe scenarios | Regression / nightly |
-| `@hardcoded` | Scenarios using statically generated credentials | Regression |
-| `@ipsum` | Scenarios using LoremIpsum random data | Regression |
-| `@ddt` | Excel data-driven registration scenarios | Full suite |
+| `@regression` | Feature-level tag — full regression suite | Pre-release / nightly |
+| `@positive` | Happy-path scenarios | Regression |
+| `@negative` | Boundary, invalid input, and rejection scenarios | Regression / nightly |
+| `@validation` | Input-validation and business-rule scenarios | Regression |
+| `@security` | Injection and scripting-probe scenarios | Regression / nightly |
 
-**Default suite** (`./gradlew clean test`) runs `@smoke or @negative or @regression` — 18 scenarios.
+**Default suite** (`./gradlew clean test`) runs `@smoke or @negative or @regression` — 18 scenario executions.
 
 **Tag override:**
 ```bash
-./gradlew clean test -Dcucumber.filter.tags="@smoke"           # 1 scenario
-./gradlew clean test -Dcucumber.filter.tags="@negative"        # negative suite
-./gradlew clean test -Dcucumber.filter.tags="@regression"      # full regression
+./gradlew clean test -Dcucumber.filter.tags="@smoke"                    # 1 scenario
+./gradlew clean test -Dcucumber.filter.tags="@negative"                 # all negative scenarios
+./gradlew clean test -Dcucumber.filter.tags="@regression"               # full regression
+./gradlew clean test -Dcucumber.filter.tags="@negative and @security"   # injection probes only
 ```
 
 ---
@@ -76,7 +77,7 @@ All scenarios are tagged for flexible suite selection at runtime.
 | Source | Usage |
 |---|---|
 | `LoremIpsum` library | Generated first/last names, addresses, phone numbers for registration tests |
-| `ddt.xlsx` (Apache POI) | External Excel file for `@ddt` data-driven registration scenarios |
+| `ddt.xlsx` (Apache POI) | External Excel file read by `ExcelDataProvider` for the external-source registration scenario |
 | `qa.properties` | Default credentials (`sqa / sqa`) — public ParaBank demo account only |
 | `TEST_USERNAME` / `TEST_PASSWORD` | Environment variables that override properties in CI and Docker |
 
@@ -110,9 +111,15 @@ This guarantees the `sqa` test user exists regardless of server state before any
 | `qa` *(default)* | Public ParaBank demo server | `./gradlew clean test` |
 | `staging` | Staging server (when available) | `-Denv=staging` |
 | `uat` | UAT server (when available) | `-Denv=uat` |
-| `prod` | Production smoke — read-only scenarios | `-Denv=prod` |
+| `prod` | Production — automatic test-data writes are blocked by the production guard | `-Denv=prod` |
 
 Each environment loads its own `.properties` file from `src/test/resources/config/`. Credentials for non-QA environments must be supplied via `TEST_USERNAME` / `TEST_PASSWORD` environment variables — they are intentionally absent from source.
+
+> **Production write protection:** When `env` is `prod` or `production` (case-insensitive),
+> `ConfigManager.guardAgainstProductionWrite()` throws a `ConfigurationException` before any
+> automatic test-user registration is attempted. Both the API path and the browser fallback are
+> protected by a single orchestration-level guard in `Hooks.ensureDefaultTestUserExists()`.
+> Read-only scenario execution is not restricted by this guard.
 
 ---
 
@@ -137,22 +144,48 @@ Tests run in parallel by default via TestNG's `@DataProvider(parallel=true)`.
 
 The following 6 scenarios consistently fail against the public ParaBank demo server. These are **server-side issues, not framework defects**.
 
-| Scenario | Root Cause |
-|---|---|
-| Login with SQL injection in username | Server sanitizes input silently; no `p.error` element is rendered — assertion finds nothing |
-| Login with SQL injection in password | Same — no error element rendered |
-| Login with XSS probe in username | Same |
-| Register with static data | Demo server rejects repeated registrations with a redirect that bypasses the expected overview page |
-| Register with LoremIpsum data | Same server-side session issue |
-| Register with Excel DDT data | Same server-side session issue |
+| Scenario | Feature | Root Cause |
+|---|---|---|
+| Sign-in is protected against injection — SQL in username | `login.feature` | Server sanitizes input silently; no `p.error` element is rendered — assertion finds nothing |
+| Sign-in is protected against injection — SQL in password | `login.feature` | Same — no error element rendered |
+| Sign-in is protected against injection — XSS in username | `login.feature` | Same |
+| A new customer can open a bank account with their personal information | `register.feature` | Demo server session does not redirect to overview after registration — logout link absent |
+| A new customer can open a bank account with a freshly generated profile | `register.feature` | Same server-side session issue |
+| A customer can open a bank account using details provided by an external source | `register.feature` | Same server-side session issue |
 
-**Established baseline: 18 tests — 12 passed, 6 failed.**
+These scenarios are tagged `@security` (login) and `@positive` (register); they are intentionally preserved
+to document actual AUT behaviour. They are not suppressed, skipped, or retried away.
 
-If your run shows 7+ failures, the public demo server may be experiencing downtime or throttling. Re-run once; transient failures resolve on retry.
+**Established baseline (commit e118ac9): 18 scenario executions — 12 passed, 6 known AUT failures.**
+
+If your run shows 7+ failures, the public demo server may be experiencing transient instability
+(observed during Phase 0.1 and Phase 5 validation). Re-run once; server-side transient failures
+resolve on retry. A stable additional failure warrants investigation before being classified as a
+framework regression.
 
 ---
 
-## 8. Future Test Expansion
+## 8. Focused Framework Tests
+
+In addition to Cucumber BDD scenarios, the framework includes a set of non-Cucumber, non-browser focused
+tests that verify framework internals deterministically.
+
+| Class | Package | Count | Purpose |
+|---|---|---|---|
+| `ProductionSafetyGuardTest` | `com.parabank.parasoft.config` | 12 | Validates `ConfigManager` production detection and write-guard behaviour |
+
+These tests:
+- Do not start a browser
+- Do not contact the ParaBank server or any external service
+- Use `ConfigManager.resetInstance()` with `System.setProperty("env", ...)` for isolation
+- Run as part of `./gradlew clean test` alongside Cucumber scenarios
+- Are not affected by ParaBank server instability
+
+**Validated total (commit e118ac9): 30 Gradle tests — 12 focused + 18 Cucumber.**
+
+---
+
+## 9. Future Test Expansion
 
 Five page objects are fully implemented and ready for feature file coverage:
 
@@ -168,7 +201,7 @@ Adding feature coverage for these pages would expand the test suite from 18 to a
 
 ---
 
-## 9. Risk Register
+## 10. Risk Register
 
 | Risk | Likelihood | Mitigation |
 |---|---|---|

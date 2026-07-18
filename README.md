@@ -68,7 +68,10 @@ TestRunner (TestNG + AbstractTestNGCucumberTests)
         +------ Hooks (@Before / @After)
         |         - MDC logging per scenario thread
         |         - WebDriver init and quit
-        |         - One-time test data setup (API-first, browser fallback)
+        |         - One-time test data setup:
+        |             ConfigManager production guard
+        |             → API registration (ParaBankApiClient)
+        |             → browser registration fallback
         |
         +------ Step Definitions (LoginSteps, RegisterSteps)
                         |
@@ -108,7 +111,7 @@ TestRunner (TestNG + AbstractTestNGCucumberTests)
 | `WaitUtils` | Explicit waits (WebDriverWait) for visibility, clickability, presence |
 | `DriverFactory` | Creates local or RemoteWebDriver based on `seleniumGridEnabled` config |
 | `DriverManager` | ThreadLocal WebDriver — one instance per test thread for parallel safety |
-| `ConfigManager` | Singleton; loads `<env>.properties`; env-var and system-property overrides |
+| `ConfigManager` | Singleton; loads `<env>.properties`; env-var and system-property overrides; production-write guard |
 | `ExcelDataProvider` | Apache POI reader; `@DataProvider` for TestNG DDT scenarios |
 | `ParaBankApiClient` | HTTP form POST for test user setup — faster than browser registration |
 | `ScreenshotUtils` | Captures PNG on failure; attaches to Cucumber and Extent reports |
@@ -434,39 +437,85 @@ remoteGridUrl=http://selenium-hub:4444/wd/hub
 
 ---
 
+## Production Write Protection
+
+> **Warning:** Running `./gradlew clean test -Denv=prod` or `-Denv=production` will block
+> automatic test-data writes before they reach the network. A `ConfigurationException` is
+> thrown immediately with a clear message. No registration request is made.
+
+The framework includes an orchestration-level guard that prevents automatic test-user creation
+from running against a production environment.
+
+### How it works
+
+```
+Hooks.ensureDefaultTestUserExists()
+    → ConfigManager.guardAgainstProductionWrite("default test user registration")
+        → throws ConfigurationException  (when env = "prod" or "production")
+        → continues                      (all other environments)
+    → ParaBankApiClient  (API registration attempt)
+    → browser registration fallback
+```
+
+`prod` and `production` are both treated as production aliases. Detection is case-insensitive.
+The guard is placed at the single orchestration boundary that controls both the API write path
+and the browser fallback — one call protects both.
+
+### What the guard protects
+
+- Automatic test-user registration via API (`ParaBankApiClient`)
+- Automatic test-user registration via browser fallback
+
+### What the guard does not restrict
+
+- Read-only scenario execution (login tests, page navigation, assertions)
+- Any write action initiated by a scenario step against the AUT itself
+
+### Validated
+
+Tested by `ProductionSafetyGuardTest` (12 focused TestNG tests, no browser, no network):
+
+| Environment value | Guard behaviour |
+|---|---|
+| `prod` | Throws `ConfigurationException` |
+| `production` | Throws `ConfigurationException` |
+| `PROD` / `Production` | Throws `ConfigurationException` (case-insensitive) |
+| `qa`, `staging`, `uat`, default | Passes — no exception thrown |
+
+---
+
 ## Tag Filtering
 
 Tag selection is driven at runtime via `-Dcucumber.filter.tags`.
 The default expression is `@smoke or @negative or @regression`.
 
 ```bash
-# Default — runs @smoke + @negative + @regression (18 scenarios)
+# Default — runs @smoke + @negative + @regression (18 scenario executions)
 ./gradlew clean test
 
 # Smoke tests only (fast sanity check)
 ./gradlew clean test -Dcucumber.filter.tags="@smoke"
 
-# Regression suite, excluding data-driven scenarios
-./gradlew clean test -Dcucumber.filter.tags="@regression and not @ddt"
+# Full regression suite
+./gradlew clean test -Dcucumber.filter.tags="@regression"
+
+# Security-oriented negative scenarios only
+./gradlew clean test -Dcucumber.filter.tags="@negative and @security"
 
 # Everything except negative tests
 ./gradlew clean test -Dcucumber.filter.tags="not @negative"
-
-# Single variant
-./gradlew clean test -Dcucumber.filter.tags="@hardcoded"
 ```
 
-Available tags:
+Active tags (current feature files — commit e118ac9):
 
-| Tag | Feature | Purpose |
+| Tag | Feature file(s) | Purpose |
 |---|---|---|
-| `@smoke` | `login.feature` | Fast sanity suite — login and security scenarios |
-| `@regression` | `register.feature` | Full registration regression |
-| `@negative` | individual scenarios | Negative and boundary tests |
-| `@positive` | individual scenarios | Happy-path tests |
-| `@hardcoded` | register scenario | Uses generated data (LoremIpsum) |
-| `@ipsum` | register scenario | Lorem Ipsum generated data variant |
-| `@ddt` | register scenario | Excel data-driven scenario |
+| `@smoke` | `login.feature` | Single critical happy-path; fast sanity check |
+| `@regression` | `login.feature`, `register.feature` | Full feature regression suite (feature-level tag) |
+| `@positive` | `login.feature`, `register.feature` | Happy-path scenarios |
+| `@negative` | `login.feature`, `register.feature` | Boundary, invalid-input, and rejection scenarios |
+| `@validation` | `login.feature`, `register.feature` | Input-validation and business-rule scenarios |
+| `@security` | `login.feature` | Injection and scripting-probe scenarios |
 
 ---
 
@@ -544,7 +593,7 @@ Locators are private `By` fields — never exposed to step definitions.
 ```java
 public class LoginPage extends BasePage {
     private static final By USERNAME_FIELD = By.cssSelector("input[name='username']");
-    private static final By PASSWORD_FIELD = By.xpath("//input[@name='password']");
+    private static final By PASSWORD_FIELD = By.cssSelector("input[name='password']");
     private static final By LOGIN_BUTTON   = By.cssSelector("input[value='Log In']");
 
     public LoginPage(WebDriver driver) { super(driver); }
@@ -1010,5 +1059,5 @@ These are the established baseline. Framework changes do not affect this count.
 ---
 
 **Framework Version:** 1.0.0
-**Phase:** F Lite (Production Readiness)
-**Last Updated:** June 2026
+**Validated commit:** e118ac9
+**Last Updated:** July 2026
