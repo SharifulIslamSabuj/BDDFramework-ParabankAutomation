@@ -188,6 +188,19 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
+      # ── 10f. Cucumber HTML/JSON reports ───────────────────────────────
+      #    cucumber-report.json is the source of truth for failed-scenario
+      #    identity in the classify step below; uploaded here for manual
+      #    inspection alongside the other evidence artifacts.
+      - name: Upload Cucumber reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cucumber-reports-${{ env.TEST_ENV }}-run${{ github.run_number }}
+          path: build/reports/cucumber/
+          retention-days: 14
+          if-no-files-found: warn
+
       # ── 11. Classify results and write job summary ────────────────────
       #    Parses build/test-results/test/TEST-*.xml against the accepted
       #    known-failure baseline.
