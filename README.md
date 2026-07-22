@@ -1,6 +1,7 @@
 # ParaBank BDD Automation Framework
 
 [![CI](https://github.com/SharifulIslamSabuj/BDDFramework-ParabankAutomation/actions/workflows/automation-test.yml/badge.svg)](https://github.com/SharifulIslamSabuj/BDDFramework-ParabankAutomation/actions/workflows/automation-test.yml)
+[![Release](https://img.shields.io/github/v/release/SharifulIslamSabuj/BDDFramework-ParabankAutomation)](https://github.com/SharifulIslamSabuj/BDDFramework-ParabankAutomation/releases/latest)
 [![Java](https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/17/)
 [![Selenium](https://img.shields.io/badge/Selenium-4.40.0-43B02A?logo=selenium&logoColor=white)](https://www.selenium.dev/)
 [![Cucumber](https://img.shields.io/badge/Cucumber-7.34.2-23D96C?logo=cucumber&logoColor=white)](https://cucumber.io/)
@@ -11,6 +12,18 @@
 Portfolio-grade Java BDD automation framework for the [ParaBank](https://parabank.parasoft.com/parabank/) public banking demo, demonstrating maintainable UI automation, API-assisted test setup, production-write protection, Selenium Grid execution, CI result classification, and evidence-driven engineering practices.
 
 **Release documentation: v1.1.1** — [CHANGELOG](CHANGELOG.md) · [Release Notes](RELEASE_NOTES_v1.1.1.md)
+
+## Table of Contents
+
+- [What This Project Demonstrates](#what-this-project-demonstrates)
+- [Validation Status](#validation-status)
+- [Quick Start](#quick-start)
+- [Architecture](#architecture)
+- [Technology Stack](#technology-stack)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Known AUT Failures](#known-aut-failures)
+- [Documentation](#documentation)
+- [Author](#author)
 
 ---
 
@@ -412,6 +425,14 @@ Expected baseline: 30 tests — 12 safety (all passed) + 18 Cucumber (12 passed,
 ## License
 
 This project is licensed under the ISC License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+## Author
+
+**Md. Shariful Islam**
+
+[LinkedIn](https://linkedin.com/in/sharifulislam-sqa) · [GitHub](https://github.com/SharifulIslamSabuj)
 
 ---
 
