@@ -171,7 +171,6 @@ Add to the quick review:
 | No Grid in CI | Selenium Grid execution requires Docker; GitHub-hosted runners do not run the Grid stack |
 | No cleanup | Registration data accumulates on the public AUT; no cleanup API is available |
 | 5 page objects without scenarios | `OpenNewAccountPage`, `OpenedAccountPage`, `RequestLoanPage`, `ApprovedLoanPage`, `UpdateProfilePage` are implemented but not yet covered by feature files |
-| No license | Public reuse terms are not specified — contact the repository owner before reusing |
 | Portfolio context | This repository is a technical demonstration, not a commercial or production deployment |
 
 ---

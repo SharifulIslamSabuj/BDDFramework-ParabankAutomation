@@ -409,4 +409,10 @@ Expected baseline: 30 tests — 12 safety (all passed) + 18 Cucumber (12 passed,
 
 ---
 
+## License
+
+This project is licensed under the ISC License. See the [LICENSE](LICENSE) file for details.
+
+---
+
 *AUT: [ParaBank](https://parabank.parasoft.com/parabank/) is a public demo application maintained by Parasoft. This framework is a portfolio demonstration and is not affiliated with Parasoft.*
