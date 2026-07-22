@@ -55,13 +55,14 @@ limitations or environment conditions. No framework defect is involved.
 All three executions of the Scenario Outline:
 > `Sign-in is protected against injection and scripting attacks` (`login.feature`)
 
-Executed with these input combinations:
+Identified by Cucumber JSON element `id` (stable across execution order and thread count —
+see [docs/CI_CD_GUIDE.md](../guides/CI_CD_GUIDE.md) for why this replaced TestNG `runScenario[N]` indices):
 
-| runScenario | Username | Password |
+| Cucumber JSON `id` | Username | Password |
 |---|---|---|
-| [9] | `'; DROP TABLE users; --` | `validPass123` |
-| [10] | `validUser` | `' OR '1'='1` |
-| [11] | `<script>alert('xss')</script>` | `validPass123` |
+| `customer-sign-in;sign-in-is-protected-against-injection-and-scripting-attacks;;2` | `'; DROP TABLE users; --` | `validPass123` |
+| `customer-sign-in;sign-in-is-protected-against-injection-and-scripting-attacks;;3` | `validUser` | `' OR '1'='1` |
+| `customer-sign-in;sign-in-is-protected-against-injection-and-scripting-attacks;;4` | `<script>alert('xss')</script>` | `validPass123` |
 
 #### Expected behaviour
 
@@ -102,7 +103,7 @@ baseline in Phase 0.1 investigation.)
 #### Latest confirmed evidence
 
 Phase 7 pre-change validation — commit `96fa5a7` — 2026-07-18  
-`runScenario[9]`, `runScenario[10]`, `runScenario[11]` — all FAILED with `WaitException`.
+All three rows of `sign-in-is-protected-against-injection-and-scripting-attacks` — all FAILED with `WaitException`.
 
 #### Why the test remains active
 
@@ -142,13 +143,13 @@ If a future run shows **fewer than 3** of these failing (e.g. only 2), investiga
 
 #### Affected scenarios
 
-Three positive registration scenarios in `register.feature`:
+Three positive registration scenarios in `register.feature`, identified by Cucumber JSON element `id`:
 
-| runScenario | Scenario title | Data source |
+| Cucumber JSON `id` | Scenario title | Data source |
 |---|---|---|
-| [13] | A new customer can open a bank account with their personal information | Static profile (page object default data) |
-| [14] | A new customer can open a bank account with a freshly generated profile | LoremIpsum generated data |
-| [15] | A customer can open a bank account using details provided by an external source | Excel (`ddt.xlsx`) via `ExcelDataProvider` |
+| `customer-account-registration;a-new-customer-can-open-a-bank-account-with-their-personal-information` | A new customer can open a bank account with their personal information | Static profile (page object default data) |
+| `customer-account-registration;a-new-customer-can-open-a-bank-account-with-a-freshly-generated-profile` | A new customer can open a bank account with a freshly generated profile | LoremIpsum generated data |
+| `customer-account-registration;a-customer-can-open-a-bank-account-using-details-provided-by-an-external-source` | A customer can open a bank account using details provided by an external source | Excel (`ddt.xlsx`) via `ExcelDataProvider` |
 
 #### Expected behaviour
 
@@ -282,15 +283,17 @@ of the expected 6. This should not be classified as a framework regression witho
 
 ## Affected Scenario Matrix
 
-| Limitation | Feature | Scenario execution | runScenario | Expected | Observed | Status |
+| Limitation | Feature | Scenario execution | Cucumber JSON `id` suffix | Expected | Observed | Status |
 |---|---|---|---|---|---|---|
-| AUT-LIM-001 | `login.feature` | Sign-in is protected against injection and scripting attacks | [9] | `p.error` element visible | `p.error` absent — timeout | Known AUT failure |
-| AUT-LIM-001 | `login.feature` | Sign-in is protected against injection and scripting attacks | [10] | `p.error` element visible | `p.error` absent — timeout | Known AUT failure |
-| AUT-LIM-001 | `login.feature` | Sign-in is protected against injection and scripting attacks | [11] | `p.error` element visible | `p.error` absent — timeout | Known AUT failure |
-| AUT-LIM-002 | `register.feature` | A new customer can open a bank account with their personal information | [13] | `a[href='logout.htm']` visible | Element absent — timeout | Known AUT failure |
-| AUT-LIM-002 | `register.feature` | A new customer can open a bank account with a freshly generated profile | [14] | `a[href='logout.htm']` visible | Element absent — timeout | Known AUT failure |
-| AUT-LIM-002 | `register.feature` | A customer can open a bank account using details provided by an external source | [15] | `a[href='logout.htm']` visible | Element absent — timeout | Known AUT failure |
+| AUT-LIM-001 | `login.feature` | Sign-in is protected against injection and scripting attacks | `...;;2` | `p.error` element visible | `p.error` absent — timeout | Known AUT failure |
+| AUT-LIM-001 | `login.feature` | Sign-in is protected against injection and scripting attacks | `...;;3` | `p.error` element visible | `p.error` absent — timeout | Known AUT failure |
+| AUT-LIM-001 | `login.feature` | Sign-in is protected against injection and scripting attacks | `...;;4` | `p.error` element visible | `p.error` absent — timeout | Known AUT failure |
+| AUT-LIM-002 | `register.feature` | A new customer can open a bank account with their personal information | (no suffix — plain Scenario) | `a[href='logout.htm']` visible | Element absent — timeout | Known AUT failure |
+| AUT-LIM-002 | `register.feature` | A new customer can open a bank account with a freshly generated profile | (no suffix — plain Scenario) | `a[href='logout.htm']` visible | Element absent — timeout | Known AUT failure |
+| AUT-LIM-002 | `register.feature` | A customer can open a bank account using details provided by an external source | (no suffix — plain Scenario) | `a[href='logout.htm']` visible | Element absent — timeout | Known AUT failure |
 | AUT-LIM-003 | All | Any scenario beyond the 6 listed above | n/a | Pass | Transient timeout | Environment — resolves on rerun |
+
+Full `id` strings are listed in [docs/CI_CD_GUIDE.md §4](../guides/CI_CD_GUIDE.md#4-classification-results).
 
 ---
 

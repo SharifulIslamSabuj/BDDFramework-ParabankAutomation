@@ -91,7 +91,7 @@ Result:
   Cucumber executions:   ___
   Passed:                ___
   Failed:                ___
-  Known AUT failures:    6  (runScenario[9,10,11,13,14,15])
+  Known AUT failures:    6  (matched by Cucumber JSON scenario id — see docs/quality/KNOWN_AUT_LIMITATIONS.md)
   Unexpected failures:   ___
 ```
 
@@ -113,12 +113,12 @@ Result:
 
 If any failure appeared beyond the known 6, classify it here:
 
-| Scenario | runScenario index | Run 1 result | Run 2 result | Classification |
+| Scenario | Cucumber JSON scenario id | Run 1 result | Run 2 result | Classification |
 |---|---|---|---|---|
 | | | | | |
 
 Classification options:
-- **Known AUT failure** — listed in [docs/KNOWN_AUT_LIMITATIONS.md](KNOWN_AUT_LIMITATIONS.md)
+- **Known AUT failure** — listed in [docs/KNOWN_AUT_LIMITATIONS.md](../quality/KNOWN_AUT_LIMITATIONS.md)
 - **Transient AUT instability** — resolved on rerun without source changes (see AUT-LIM-003)
 - **New stable regression** — fails across two consecutive runs; blocks merge until resolved
 - **Test-data collision** — scenario depends on shared server state from another run
@@ -132,7 +132,7 @@ Classification options:
 If this PR changes the expected execution count or the known-failure set, update `scripts/analyze-test-results.sh`:
 
 - [ ] `EXPECTED_CUCUMBER` reflects the new total execution count (currently 18).
-- [ ] `KNOWN_FAILURE_INDICES` reflects the new known-failure set (currently `{9,10,11,13,14,15}`).
+- [ ] `KNOWN_FAILURE_IDS` reflects the new known-failure set (currently the 6 Cucumber JSON scenario ids listed in `docs/guides/CI_CD_GUIDE.md`).
 - [ ] The CI badge is expected to be: [ `VALIDATED_BASELINE` (green) / `UNEXPECTED_REGRESSION` until AUT fixes / other — explain ]
 
 ---
@@ -140,10 +140,9 @@ If this PR changes the expected execution count or the known-failure set, update
 ## Documentation
 
 - [ ] `README.md` was updated if a user-facing behaviour, execution count, or tag changed.
-- [ ] `docs/TEST_STRATEGY.md` was updated if scope, tag model, or environment strategy changed.
-- [ ] `docs/QUALITY_RISK_ASSESSMENT.md` was updated if a new risk was introduced or mitigated.
-- [ ] `docs/KNOWN_AUT_LIMITATIONS.md` was updated if the known-failure set changed.
-- [ ] Historical phase reports in `docs/review/` were **not modified**.
+- [ ] `docs/quality/TEST_STRATEGY.md` was updated if scope, tag model, or environment strategy changed.
+- [ ] `docs/quality/QUALITY_RISK_ASSESSMENT.md` was updated if a new risk was introduced or mitigated.
+- [ ] `docs/quality/KNOWN_AUT_LIMITATIONS.md` was updated if the known-failure set changed.
 - [ ] No claim was added to documentation that cannot be supported by current source code.
 
 ---

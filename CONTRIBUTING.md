@@ -4,11 +4,11 @@ Contributions are welcome — bug fixes, new test scenarios, new page objects, a
 improvements. Read this document before starting work.
 
 **Detailed guidance:**
-- [docs/FRAMEWORK_EXTENSION_GUIDE.md](docs/FRAMEWORK_EXTENSION_GUIDE.md) — architecture, layer rules, code standards, anti-patterns
-- [docs/PULL_REQUEST_CHECKLIST.md](docs/PULL_REQUEST_CHECKLIST.md) — submission checklist with validation evidence template
-- [docs/KNOWN_AUT_LIMITATIONS.md](docs/KNOWN_AUT_LIMITATIONS.md) — the 6 expected test failures and why they exist
-- [docs/QUALITY_RISK_ASSESSMENT.md](docs/QUALITY_RISK_ASSESSMENT.md) — risk register and technical/test debt
-- [docs/CI_CD_GUIDE.md](docs/CI_CD_GUIDE.md) — CI pipeline stages and result classification
+- [docs/guides/FRAMEWORK_EXTENSION_GUIDE.md](docs/guides/FRAMEWORK_EXTENSION_GUIDE.md) — architecture, layer rules, code standards, anti-patterns
+- [docs/guides/PULL_REQUEST_CHECKLIST.md](docs/guides/PULL_REQUEST_CHECKLIST.md) — submission checklist with validation evidence template
+- [docs/quality/KNOWN_AUT_LIMITATIONS.md](docs/quality/KNOWN_AUT_LIMITATIONS.md) — the 6 expected test failures and why they exist
+- [docs/quality/QUALITY_RISK_ASSESSMENT.md](docs/quality/QUALITY_RISK_ASSESSMENT.md) — risk register and technical/test debt
+- [docs/guides/CI_CD_GUIDE.md](docs/guides/CI_CD_GUIDE.md) — CI pipeline stages and result classification
 
 ---
 
@@ -38,7 +38,7 @@ cd BDDFramework-ParabankAutomation
 scenarios (12 passed, 6 known AUT failures). Gradle exits with `BUILD FAILED` because the 6
 known failures are active and intentional. This is the correct starting state.
 
-See [docs/KNOWN_AUT_LIMITATIONS.md](docs/KNOWN_AUT_LIMITATIONS.md) for why those 6 fail.
+See [docs/quality/KNOWN_AUT_LIMITATIONS.md](docs/quality/KNOWN_AUT_LIMITATIONS.md) for why those 6 fail.
 
 ---
 
@@ -97,7 +97,7 @@ Feature files  →  Step definitions  →  Page objects  →  ElementActions/Wai
 | `ParaBankApiClient` | HTTP setup operations; no assertions; no sensitive logging |
 
 For detailed layer rules, locator standards, wait standards, anti-patterns, and a step-by-step
-scenario addition workflow, see [docs/FRAMEWORK_EXTENSION_GUIDE.md](docs/FRAMEWORK_EXTENSION_GUIDE.md).
+scenario addition workflow, see [docs/guides/FRAMEWORK_EXTENSION_GUIDE.md](docs/guides/FRAMEWORK_EXTENSION_GUIDE.md).
 
 ---
 
@@ -141,12 +141,12 @@ Run these in order before submitting a pull request:
 
 **Accepted baseline:** 18 Cucumber executions — 12 passed, 6 known AUT failures, 0 unexpected.
 
-**CI classification:** GitHub Actions classifies each run automatically. A run matching exactly the 6 known failures is `VALIDATED_BASELINE` and the job is **green**. Any deviation — extra failure, missing failure, or count mismatch — is `UNEXPECTED_REGRESSION` and the job is **red**. The job summary panel in the Actions UI always shows the classification result. See [docs/CI_CD_GUIDE.md](docs/CI_CD_GUIDE.md) for details.
+**CI classification:** GitHub Actions classifies each run automatically. A run matching exactly the 6 known failures is `VALIDATED_BASELINE` and the job is **green**. Any deviation — extra failure, missing failure, or count mismatch — is `UNEXPECTED_REGRESSION` and the job is **red**. The job summary panel in the Actions UI always shows the classification result. See [docs/guides/CI_CD_GUIDE.md](docs/guides/CI_CD_GUIDE.md) for details.
 
 If the full regression shows more than 6 failures:
 
 1. Preserve the first result.
-2. Check whether the failing scenario is in the known-failure list in [docs/KNOWN_AUT_LIMITATIONS.md](docs/KNOWN_AUT_LIMITATIONS.md).
+2. Check whether the failing scenario is in the known-failure list in [docs/quality/KNOWN_AUT_LIMITATIONS.md](docs/quality/KNOWN_AUT_LIMITATIONS.md).
 3. If it is a new failure, run once more to check for transient AUT instability.
 4. If it reproduces on the second run, **block merge and investigate**. Do not keep rerunning until green.
 5. Record both run results in the pull request.
@@ -205,12 +205,10 @@ must update the corresponding documentation before merge:
 | Architecture change | README Architecture; TEST_STRATEGY |
 | New risk or mitigation | QUALITY_RISK_ASSESSMENT.md |
 
-Do not modify files in `docs/review/` — they are point-in-time historical evidence records.
-
 ---
 
 ## Before Submitting
 
-Copy [docs/PULL_REQUEST_CHECKLIST.md](docs/PULL_REQUEST_CHECKLIST.md) into your pull request
+Copy [docs/guides/PULL_REQUEST_CHECKLIST.md](docs/guides/PULL_REQUEST_CHECKLIST.md) into your pull request
 description and complete every item, including the validation evidence table with actual
 command output.

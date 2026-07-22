@@ -343,31 +343,57 @@ Gradle exits with `BUILD FAILED in 2m 26s` and `30 tests completed, 6 failed` on
 validated run. The CI workflow uses `if: always()` for artifact upload to ensure reports are
 available regardless of job outcome.
 
-**Phase 10 mitigation — result classification:**  
-`scripts/analyze-test-results.sh` parses `build/test-results/test/TEST-*.xml` and compares
-the failing test indices to the accepted baseline `{runScenario[9,10,11,13,14,15]}`.
+**Phase 10 mitigation — result classification (original):**  
+`scripts/analyze-test-results.sh` parsed `build/test-results/test/TEST-*.xml` and compared
+the failing TestNG `runScenario[N]` indices to the accepted baseline
+`{runScenario[9,10,11,13,14,15]}`.
+
+**Identity-instability finding (post-Phase 10, pre-v1.1.1):**  
+Direct inspection of a locally generated JUnit XML file showed that `runScenario[N]` is
+assigned by TestNG data-provider invocation order, not by scenario content. Under
+`dataproviderthreadcount` > 1 (Gradle's own default is 2), the same index was observed
+reused for two different scenarios, with indices assigned out of declaration order. CI
+avoided the symptom only because it forces `dataproviderthreadcount=1`/`maxParallelForks=1`
+— a setting documented elsewhere as a CPU-contention mitigation for 2-vCPU runners
+(`docs/TEST_STRATEGY.md`), not as a guarantee of classifier stability. No prior document
+recorded this as an intentional, verified property. See `docs/CI_CD_GUIDE.md` §4 for the
+full analysis.
+
+**Mitigation (current) — Cucumber JSON element `id`:**  
+The classifier now identifies failed scenarios using the Cucumber JSON element-level `id`
+field from `build/reports/cucumber/cucumber-report.json` (already produced by the `json:`
+formatter declared in `TestRunner.java` — no Java/TestRunner/Hooks/listener/plugin change
+was required). This id is derived from the Gherkin document (feature + scenario name +
+outline row ordinal) and does not depend on TestNG thread count, execution order, or
+invocation index. JUnit XML remains the source of truth for execution counts and the
+production-safety gate; its counts are cross-checked against the Cucumber JSON element
+counts, and any disagreement is treated as untrustworthy rather than resolved silently.
 
 | Classification | CI outcome |
 |---|---|
-| `VALIDATED_BASELINE` — exactly the 6 known failures | **Job green** |
-| `UNEXPECTED_REGRESSION` — different or additional failures | **Job red** |
+| `VALIDATED_BASELINE` — exactly the 6 known failures (by `id`) | **Job green** |
+| `UNEXPECTED_REGRESSION` — different/additional failure IDs, count mismatch, or safety-test failure | **Job red** |
 | `INFRASTRUCTURE_FAILURE` — Cucumber suite did not execute | **Job red** |
-| `RESULTS_UNAVAILABLE` — no JUnit XML found | **Job red** |
+| `RESULTS_UNAVAILABLE` — no JUnit XML found; or Cucumber JSON missing/malformed/incomplete; or JSON/XML counts disagree | **Job red** |
 
 The classifier is the final step in the pipeline. It writes a structured summary to the
-GitHub Actions job summary panel on every run.
+GitHub Actions job summary panel on every run, including expected/actual/unexpected/missing
+IDs with scenario name and feature `uri` for diagnostics.
 
 **Residual risk:**  
-The classifier reads the accepted failure set as a hard-coded `frozenset` in the script.
-If a new scenario is added, the expected counts must be updated in the script. Failure to
-do so would cause `UNEXPECTED_REGRESSION` on the first green run of the new scenario.
+The classifier reads the accepted failure set as a hard-coded `frozenset` of `id` strings.
+If one of the six tracked scenarios' own name text is edited, or its outline rows are
+reordered, the `id` changes and the baseline must be updated. Unrelated edits elsewhere in
+a feature file (new scenarios, comments, reordering *other* scenarios) do not affect these
+IDs.
 
 **Recommended action:**  
 When the expected Cucumber execution count or the known-failure set changes, update
-`KNOWN_FAILURE_INDICES` and `EXPECTED_CUCUMBER` in `scripts/analyze-test-results.sh`.
+`KNOWN_FAILURE_IDS` and `EXPECTED_CUCUMBER` in `scripts/analyze-test-results.sh`, following
+the revalidation guidance in `docs/CI_CD_GUIDE.md` §4.
 
 **Owner:** Framework maintainer  
-**Status:** Mitigated (Phase 10)
+**Status:** Mitigated (Phase 10; identity mechanism replaced pre-v1.1.1)
 
 ---
 
@@ -380,7 +406,7 @@ When the expected Cucumber execution count or the known-failure set changes, upd
 | QR-004 | Test data accumulation | No cleanup API on public AUT; idempotent registration handles sqa user | No current functional impact | Server quota or throttling observed |
 | QR-005 | `production` alias — no `.properties` file | Guard protects writes; one-line config change if needed | Low probability of use | `-Denv=production` is used in CI or production workflow |
 | QR-006 | Orphaned `implicitWait` property | No code reads it; harmless; removing 5 files offered zero benefit | None | Another review phase targets configuration files |
-| QR-009 | CI red badge on known failures | **Mitigated in Phase 10** — result classifier distinguishes known from unexpected; job is green for VALIDATED_BASELINE | No unexpected regression masked | Classifier known-failure set updated when baseline changes |
+| QR-009 | CI red badge on known failures | **Mitigated** — result classifier distinguishes known from unexpected using stable Cucumber JSON element `id` matching (replaced unstable `runScenario[N]` index matching pre-v1.1.1); job is green for VALIDATED_BASELINE | No unexpected regression masked | `KNOWN_FAILURE_IDS` updated when one of the 6 tracked scenarios' name/rows changes or the baseline changes |
 | QR-010 | Production guard scope (setup writes only) | Scenario-step writes to AUT are intentional test actions; guard targets automated setup | Clearly documented scope | Guard expansion required by new write-capable hooks |
 | QR-012 | Static `DEFAULT_USER_SETUP_DONE` flag | One Cucumber suite per JVM; not a parallel or multi-suite concern | No observed issue | Multiple suite classes in same JVM introduced |
 | QR-013 | No registration cleanup | Public AUT has no cleanup API; idempotent handling in place | No observed impact | Server-side quota or rejection observed |
