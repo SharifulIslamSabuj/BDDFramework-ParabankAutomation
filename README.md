@@ -10,7 +10,7 @@
 
 Portfolio-grade Java BDD automation framework for the [ParaBank](https://parabank.parasoft.com/parabank/) public banking demo, demonstrating maintainable UI automation, API-assisted test setup, production-write protection, Selenium Grid execution, CI result classification, and evidence-driven engineering practices.
 
-**Release documentation: v1.1.0** — [CHANGELOG](CHANGELOG.md) · [Release Notes](RELEASE_NOTES_v1.1.0.md) · [Validation Record](docs/RELEASE_VALIDATION.md)
+**Release documentation: v1.1.0** — [CHANGELOG](CHANGELOG.md) · [Release Notes](RELEASE_NOTES_v1.1.0.md)
 
 ---
 
@@ -27,7 +27,7 @@ Portfolio-grade Java BDD automation framework for the [ParaBank](https://paraban
 | **Selenium Grid** | Docker health-check cascade; `RemoteWebDriver`; noVNC session inspection |
 | **Docker support** | Multi-stage `Dockerfile`, `docker-compose.yml`, `docker-compose.grid.yml` |
 | **CI pipeline** | GitHub Actions — compile gate → safety gate → regression → result classification |
-| **CI classification** | Python 3 JUnit XML classifier; green badge only for `VALIDATED_BASELINE` |
+| **CI classification** | Python 3 classifier — JUnit XML for execution counts, Cucumber JSON scenario IDs for failed-scenario identity; green badge only for `VALIDATED_BASELINE` |
 | **Production safety** | Write guard blocks automatic test-data creation against `prod`/`production` |
 | **Configuration** | 4-level priority chain (JVM property → env var → properties → default) |
 | **Credential security** | No secrets in source; GitHub Secrets; passwords never logged |
@@ -49,7 +49,7 @@ Portfolio-grade Java BDD automation framework for the [ParaBank](https://paraban
 
 The 6 failures are **documented AUT limitations**, not framework defects. They are intentionally preserved so the test suite accurately reflects the current behaviour of the public ParaBank demo server. The CI pipeline is **green** when exactly these 6 failures are observed. Any new or different failure turns CI red.
 
-→ [docs/KNOWN_AUT_LIMITATIONS.md](docs/KNOWN_AUT_LIMITATIONS.md) · [docs/CI_CD_GUIDE.md](docs/CI_CD_GUIDE.md)
+→ [docs/KNOWN_AUT_LIMITATIONS.md](docs/quality/KNOWN_AUT_LIMITATIONS.md) · [docs/CI_CD_GUIDE.md](docs/guides/CI_CD_GUIDE.md)
 
 ---
 
@@ -125,7 +125,7 @@ flowchart TD
 | `ParaBankApiClient` | HTTP form POST for test user setup — faster than browser registration |
 | `ScreenshotUtils` | PNG capture on failure; embeds in ExtentReport and Cucumber HTML |
 
-→ [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — Mermaid diagrams, design decisions, and trade-offs
+→ [docs/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) — Mermaid diagrams, design decisions, and trade-offs
 
 ---
 
@@ -220,7 +220,7 @@ docker compose -f docker-compose.grid.yml down -v --remove-orphans
 **Grid Console:** `http://localhost:4444/ui`  
 **Live session (noVNC):** `http://localhost:7900` (password: `secret`)
 
-→ [docs/SELENIUM_GRID_GUIDE.md](docs/SELENIUM_GRID_GUIDE.md) — full Grid reference
+→ [docs/SELENIUM_GRID_GUIDE.md](docs/guides/SELENIUM_GRID_GUIDE.md) — full Grid reference
 
 ---
 
@@ -247,9 +247,9 @@ flowchart LR
 | `VALIDATED_BASELINE` | **Green** — exactly the 6 known AUT failures |
 | `UNEXPECTED_REGRESSION` | **Red** — different or additional failures |
 | `INFRASTRUCTURE_FAILURE` | **Red** — Cucumber suite did not execute |
-| `RESULTS_UNAVAILABLE` | **Red** — no JUnit XML found |
+| `RESULTS_UNAVAILABLE` | **Red** — no JUnit XML found, or the Cucumber JSON report is missing/malformed/inconsistent with the XML counts |
 
-→ [docs/CI_CD_GUIDE.md](docs/CI_CD_GUIDE.md) — full CI reference
+→ [docs/CI_CD_GUIDE.md](docs/guides/CI_CD_GUIDE.md) — full CI reference
 
 ---
 
@@ -276,12 +276,12 @@ Six Cucumber scenarios consistently fail against the public ParaBank demo server
 
 | Category | Scenarios | Root cause |
 |---|---|---|
-| Injection probes (`@security`) | `runScenario[9,10,11]` | Server sanitizes input without rendering `p.error` — assertion finds no element |
-| Registration redirect (`@positive`) | `runScenario[13,14,15]` | Server session does not redirect to overview after registration |
+| Injection probes (`@security`) | `sign-in-is-protected-against-injection-and-scripting-attacks` (3 example rows) | Server sanitizes input without rendering `p.error` — assertion finds no element |
+| Registration redirect (`@positive`) | 3 positive registration scenarios | Server session does not redirect to overview after registration |
 
-CI is **green** when exactly these 6 scenarios fail. A new or different failure turns CI red.
+Failed-scenario identity is matched by stable Cucumber JSON scenario `id` (feature + scenario name + outline row), not by execution order. CI is **green** (`VALIDATED_BASELINE`) when exactly these 6 scenario IDs fail. A different or additional failed ID turns CI red (`UNEXPECTED_REGRESSION`).
 
-→ [docs/KNOWN_AUT_LIMITATIONS.md](docs/KNOWN_AUT_LIMITATIONS.md) · [docs/QUALITY_RISK_ASSESSMENT.md](docs/QUALITY_RISK_ASSESSMENT.md)
+→ [docs/KNOWN_AUT_LIMITATIONS.md](docs/quality/KNOWN_AUT_LIMITATIONS.md) · [docs/QUALITY_RISK_ASSESSMENT.md](docs/quality/QUALITY_RISK_ASSESSMENT.md)
 
 ---
 
@@ -351,21 +351,22 @@ src/test/
     └── automation-test.yml             # CI pipeline (compile → safety → regression → classify)
 
 scripts/
-    ├── analyze-test-results.sh         # JUnit XML classifier (Python 3)
+    ├── analyze-test-results.sh         # Result classifier (Python 3) — JUnit XML counts + Cucumber JSON scenario IDs
     └── wait-for-grid.ps1               # Selenium Grid readiness check (PowerShell)
 
 docs/
-    ├── ARCHITECTURE.md                 # Layered design, Mermaid diagrams, design decisions
     ├── PORTFOLIO_OVERVIEW.md           # Recruiter-oriented project summary
-    ├── INTERVIEWER_GUIDE.md            # Structured technical review path
-    ├── TEST_STRATEGY.md                # Test scope, tags, environments, CI stages
-    ├── SELENIUM_GRID_GUIDE.md          # Grid startup, readiness, diagnostics, teardown
-    ├── CI_CD_GUIDE.md                  # CI pipeline stages and result classification
-    ├── KNOWN_AUT_LIMITATIONS.md        # The 6 known failures — why they exist
-    ├── QUALITY_RISK_ASSESSMENT.md      # Risk register and technical debt
-    ├── FRAMEWORK_EXTENSION_GUIDE.md   # Layer rules, anti-patterns, extension workflow
-    ├── PULL_REQUEST_CHECKLIST.md       # PR submission evidence template
-    └── review/                         # Point-in-time phase evidence reports
+    ├── architecture/
+    │   └── ARCHITECTURE.md             # Layered design, Mermaid diagrams, design decisions
+    ├── guides/
+    │   ├── CI_CD_GUIDE.md              # CI pipeline stages and result classification
+    │   ├── SELENIUM_GRID_GUIDE.md      # Grid startup, readiness, diagnostics, teardown
+    │   ├── FRAMEWORK_EXTENSION_GUIDE.md # Layer rules, anti-patterns, extension workflow
+    │   └── PULL_REQUEST_CHECKLIST.md   # PR submission evidence template
+    └── quality/
+        ├── TEST_STRATEGY.md            # Test scope, tags, environments, CI stages
+        ├── KNOWN_AUT_LIMITATIONS.md    # The 6 known failures — why they exist
+        └── QUALITY_RISK_ASSESSMENT.md  # Risk register and technical debt
 
 docker-compose.yml                      # Single-container local execution
 docker-compose.grid.yml                 # Hub + Chrome Node + test container
@@ -379,16 +380,15 @@ build.gradle                            # Dependencies, parallel configuration, 
 
 | Document | Purpose |
 |---|---|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Framework design, Mermaid execution flows, and design decisions |
 | [docs/PORTFOLIO_OVERVIEW.md](docs/PORTFOLIO_OVERVIEW.md) | Recruiter and reviewer project summary |
-| [docs/INTERVIEWER_GUIDE.md](docs/INTERVIEWER_GUIDE.md) | Suggested technical review path with evidence pointers |
-| [docs/TEST_STRATEGY.md](docs/TEST_STRATEGY.md) | Test scope, tag model, CI stages, and known failures |
-| [docs/SELENIUM_GRID_GUIDE.md](docs/SELENIUM_GRID_GUIDE.md) | Grid startup, readiness, diagnostics, and teardown |
-| [docs/CI_CD_GUIDE.md](docs/CI_CD_GUIDE.md) | CI pipeline stages and result classification |
-| [docs/KNOWN_AUT_LIMITATIONS.md](docs/KNOWN_AUT_LIMITATIONS.md) | The 6 accepted AUT failures and root-cause analysis |
-| [docs/QUALITY_RISK_ASSESSMENT.md](docs/QUALITY_RISK_ASSESSMENT.md) | Evidence-based risk register and technical debt |
-| [docs/FRAMEWORK_EXTENSION_GUIDE.md](docs/FRAMEWORK_EXTENSION_GUIDE.md) | Layer rules, anti-patterns, and extension workflow |
-| [docs/PULL_REQUEST_CHECKLIST.md](docs/PULL_REQUEST_CHECKLIST.md) | PR submission evidence template |
+| [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) | Framework design, Mermaid execution flows, and design decisions |
+| [docs/quality/TEST_STRATEGY.md](docs/quality/TEST_STRATEGY.md) | Test scope, tag model, CI stages, and known failures |
+| [docs/guides/SELENIUM_GRID_GUIDE.md](docs/guides/SELENIUM_GRID_GUIDE.md) | Grid startup, readiness, diagnostics, and teardown |
+| [docs/guides/CI_CD_GUIDE.md](docs/guides/CI_CD_GUIDE.md) | CI pipeline stages and result classification |
+| [docs/quality/KNOWN_AUT_LIMITATIONS.md](docs/quality/KNOWN_AUT_LIMITATIONS.md) | The 6 accepted AUT failures and root-cause analysis |
+| [docs/quality/QUALITY_RISK_ASSESSMENT.md](docs/quality/QUALITY_RISK_ASSESSMENT.md) | Evidence-based risk register and technical debt |
+| [docs/guides/FRAMEWORK_EXTENSION_GUIDE.md](docs/guides/FRAMEWORK_EXTENSION_GUIDE.md) | Layer rules, anti-patterns, and extension workflow |
+| [docs/guides/PULL_REQUEST_CHECKLIST.md](docs/guides/PULL_REQUEST_CHECKLIST.md) | PR submission evidence template |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution workflow, baseline, and validation commands |
 
 ---

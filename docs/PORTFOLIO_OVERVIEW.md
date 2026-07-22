@@ -39,7 +39,7 @@
 | **Selenium Grid** | Docker Compose health-check cascade; Hub readiness validation; `RemoteWebDriver` |
 | **Docker containerisation** | `Dockerfile`, `docker-compose.yml`, `docker-compose.grid.yml` with volume mounts |
 | **CI/CD pipeline** | GitHub Actions with staged gates: compile → safety → regression → classify |
-| **Result classification** | Python 3 JUnit XML classifier; 4 classification outcomes; structured job summary |
+| **Result classification** | Python 3 classifier — JUnit XML execution counts + Cucumber JSON scenario-ID identity; 4 classification outcomes; structured job summary |
 | **Multi-environment config** | 4-level priority chain (JVM property → env var → properties file → default) |
 | **Production safety control** | Write-guard prevents automatic test-data creation against production aliases |
 | **Credential security** | No secrets in source; GitHub Secrets integration; passwords never logged |
@@ -62,12 +62,12 @@ This repository demonstrates solutions to real problems encountered in QA automa
 ### Problem 2 — CI permanently red from known AUT failures
 **Problem:** Six scenarios consistently fail against the public demo server. A raw Gradle exit maps every run to a red CI badge, making regression detection impossible.  
 **Solution:** `scripts/analyze-test-results.sh` classifies results as `VALIDATED_BASELINE` / `UNEXPECTED_REGRESSION` / `INFRASTRUCTURE_FAILURE` / `RESULTS_UNAVAILABLE`. CI is green when the exact known-failure set is observed.  
-**Evidence:** `docs/CI_CD_GUIDE.md`, `docs/review/PHASE_10_CI_CD_IMPROVEMENTS.md`.
+**Evidence:** `docs/guides/CI_CD_GUIDE.md`.
 
 ### Problem 3 — Selenium Grid startup race condition
 **Problem:** `docker-compose.grid.yml` originally started the test container as soon as the Chrome Node container started — before the node had registered with the Hub.  
 **Solution:** Docker health-check cascade: hub liveness → chrome-node registration → test container start.  
-**Evidence:** `docs/review/PHASE_9_SELENIUM_GRID_READINESS.md`.
+**Evidence:** `docker-compose.grid.yml` health-check cascade; `docs/guides/SELENIUM_GRID_GUIDE.md`.
 
 ### Problem 4 — Parallel test thread interference
 **Problem:** Parallel test threads sharing a `WebDriver` instance or a static-initialization resource.  
@@ -107,7 +107,7 @@ This repository demonstrates solutions to real problems encountered in QA automa
 
 ## 5. Validation Evidence
 
-The following table reflects the last validated local execution at commit `a5b2bf0`:
+The following table reflects the current validated state on `main` after PR #1 (the Cucumber JSON scenario-ID classifier) merged:
 
 | Metric | Value |
 |---|---|
@@ -115,12 +115,12 @@ The following table reflects the last validated local execution at commit `a5b2b
 | Production-safety tests | 12/12 passed |
 | Cucumber executions | 18 |
 | Passed scenarios | 12 |
-| Known AUT failures | 6 (`runScenario[9,10,11,13,14,15]`) |
+| Known AUT failures | 6 (matched by stable Cucumber JSON scenario `id`, not execution order) |
 | Unexpected failures | 0 |
 | CI classification | `VALIDATED_BASELINE` |
 | Selenium Grid regression | 18/12/6 (identical to local) |
 
-The 6 known failures are documented in [docs/KNOWN_AUT_LIMITATIONS.md](KNOWN_AUT_LIMITATIONS.md). They are intentionally preserved to document AUT behaviour, not suppressed.
+The 6 known failures are documented in [docs/KNOWN_AUT_LIMITATIONS.md](quality/KNOWN_AUT_LIMITATIONS.md). They are intentionally preserved to document AUT behaviour, not suppressed.
 
 ---
 
@@ -129,12 +129,11 @@ The 6 known failures are documented in [docs/KNOWN_AUT_LIMITATIONS.md](KNOWN_AUT
 | Starting point | Best for |
 |---|---|
 | [README.md](../README.md) | Full project overview and quick start |
-| [docs/ARCHITECTURE.md](ARCHITECTURE.md) | Framework design and execution flows |
-| [docs/INTERVIEWER_GUIDE.md](INTERVIEWER_GUIDE.md) | Structured technical review path |
-| [docs/TEST_STRATEGY.md](TEST_STRATEGY.md) | Test scope, tags, and known failure baseline |
-| [docs/CI_CD_GUIDE.md](CI_CD_GUIDE.md) | CI pipeline and classification |
-| [docs/QUALITY_RISK_ASSESSMENT.md](QUALITY_RISK_ASSESSMENT.md) | Risk register and engineering decisions |
-| [docs/KNOWN_AUT_LIMITATIONS.md](KNOWN_AUT_LIMITATIONS.md) | Why 6 scenarios consistently fail |
+| [docs/architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) | Framework design and execution flows |
+| [docs/quality/TEST_STRATEGY.md](quality/TEST_STRATEGY.md) | Test scope, tags, and known failure baseline |
+| [docs/guides/CI_CD_GUIDE.md](guides/CI_CD_GUIDE.md) | CI pipeline and classification |
+| [docs/quality/QUALITY_RISK_ASSESSMENT.md](quality/QUALITY_RISK_ASSESSMENT.md) | Risk register and engineering decisions |
+| [docs/quality/KNOWN_AUT_LIMITATIONS.md](quality/KNOWN_AUT_LIMITATIONS.md) | Why 6 scenarios consistently fail |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | How to extend the framework |
 
 ---
@@ -148,7 +147,7 @@ The 6 known failures are documented in [docs/KNOWN_AUT_LIMITATIONS.md](KNOWN_AUT
 3. Open `src/test/java/.../pages/LoginPage.java` — page object design
 4. Open `src/test/java/.../stepdefinitions/LoginSteps.java` — step delegation
 5. Open `.github/workflows/automation-test.yml` — CI structure
-6. Open [docs/KNOWN_AUT_LIMITATIONS.md](KNOWN_AUT_LIMITATIONS.md) — honest limitation documentation
+6. Open [docs/KNOWN_AUT_LIMITATIONS.md](quality/KNOWN_AUT_LIMITATIONS.md) — honest limitation documentation
 
 ### Deeper technical review (30 minutes)
 
@@ -158,8 +157,8 @@ Add to the quick review:
 8. Open `src/test/java/.../config/ConfigManager.java` — credential chain and production guard
 9. Open `src/test/java/.../driver/DriverFactory.java` — local vs remote driver selection
 10. Open `scripts/analyze-test-results.sh` — CI classification logic
-11. Read [docs/QUALITY_RISK_ASSESSMENT.md](QUALITY_RISK_ASSESSMENT.md) — risk-based QA thinking
-12. Read [docs/ARCHITECTURE.md](ARCHITECTURE.md) — design decisions and trade-offs
+11. Read [docs/QUALITY_RISK_ASSESSMENT.md](quality/QUALITY_RISK_ASSESSMENT.md) — risk-based QA thinking
+12. Read [docs/ARCHITECTURE.md](architecture/ARCHITECTURE.md) — design decisions and trade-offs
 
 ---
 
@@ -177,4 +176,4 @@ Add to the quick review:
 
 ---
 
-*See [docs/QUALITY_RISK_ASSESSMENT.md](QUALITY_RISK_ASSESSMENT.md) for the full risk register with detailed records and residual risk analysis.*
+*See [docs/QUALITY_RISK_ASSESSMENT.md](quality/QUALITY_RISK_ASSESSMENT.md) for the full risk register with detailed records and residual risk analysis.*

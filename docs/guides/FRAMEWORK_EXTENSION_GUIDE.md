@@ -15,7 +15,7 @@ the current implementation — not a theoretical standard.
 Provide implementation-level guidance for extending the framework correctly, safely, and
 consistently with the established architecture. For submission requirements see
 [PULL_REQUEST_CHECKLIST.md](PULL_REQUEST_CHECKLIST.md). For risk context see
-[QUALITY_RISK_ASSESSMENT.md](QUALITY_RISK_ASSESSMENT.md).
+[QUALITY_RISK_ASSESSMENT.md](../quality/QUALITY_RISK_ASSESSMENT.md).
 
 ---
 
@@ -453,8 +453,9 @@ Run these commands in order. Every step must pass before the next.
 | One additional failure, resolved on rerun | **Transient AUT instability — document both runs** |
 | One additional failure, reproducible across two runs | **Block merge — investigate** |
 
-The six known AUT failures (`runScenario[9,10,11,13,14,15]`) always appear.
-See [docs/KNOWN_AUT_LIMITATIONS.md](KNOWN_AUT_LIMITATIONS.md) for their exact scenario titles.
+The six known AUT failures, matched by stable Cucumber JSON scenario `id` (not by
+TestNG execution index), always appear.
+See [docs/quality/KNOWN_AUT_LIMITATIONS.md](../quality/KNOWN_AUT_LIMITATIONS.md) for their exact scenario titles and IDs.
 
 ---
 
@@ -549,8 +550,6 @@ When adding code, update documentation before closing the pull request:
 | New configuration property | README Configuration section; TEST_STRATEGY if strategy changes |
 | New production-write path | QUALITY_RISK_ASSESSMENT guard scope note |
 | Architecture change | README Architecture sections; TEST_STRATEGY architecture layer |
-
-Do not modify historical phase reports in `docs/review/`. They are point-in-time evidence records.
 
 ---
 

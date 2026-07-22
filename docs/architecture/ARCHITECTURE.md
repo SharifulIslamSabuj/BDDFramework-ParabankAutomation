@@ -9,11 +9,10 @@
 
 | Document | Purpose |
 |---|---|
-| [PORTFOLIO_OVERVIEW.md](PORTFOLIO_OVERVIEW.md) | Recruiter and reviewer summary |
-| [INTERVIEWER_GUIDE.md](INTERVIEWER_GUIDE.md) | Suggested technical review path |
-| [TEST_STRATEGY.md](TEST_STRATEGY.md) | Test scope, tags, and known failure baseline |
-| [FRAMEWORK_EXTENSION_GUIDE.md](FRAMEWORK_EXTENSION_GUIDE.md) | Layer rules, anti-patterns, extension workflow |
-| [CI_CD_GUIDE.md](CI_CD_GUIDE.md) | CI pipeline stages and result classification |
+| [PORTFOLIO_OVERVIEW.md](../PORTFOLIO_OVERVIEW.md) | Recruiter and reviewer summary |
+| [TEST_STRATEGY.md](../quality/TEST_STRATEGY.md) | Test scope, tags, and known failure baseline |
+| [FRAMEWORK_EXTENSION_GUIDE.md](../guides/FRAMEWORK_EXTENSION_GUIDE.md) | Layer rules, anti-patterns, extension workflow |
+| [CI_CD_GUIDE.md](../guides/CI_CD_GUIDE.md) | CI pipeline stages and result classification |
 
 ---
 
@@ -333,4 +332,4 @@ Requires care (review `docs/FRAMEWORK_EXTENSION_GUIDE.md` first):
 - Changing tag expressions → update `EXPECTED_CUCUMBER` in `scripts/analyze-test-results.sh`
 - Changing execution count → update classifier expected count
 
-See [docs/FRAMEWORK_EXTENSION_GUIDE.md](FRAMEWORK_EXTENSION_GUIDE.md) for the full extension workflow, anti-patterns, and validation checklist.
+See [docs/guides/FRAMEWORK_EXTENSION_GUIDE.md](../guides/FRAMEWORK_EXTENSION_GUIDE.md) for the full extension workflow, anti-patterns, and validation checklist.

@@ -160,9 +160,14 @@ The GitHub Actions pipeline runs test execution in three gated stages before cla
 | Full Cucumber regression | `xvfb-run ./gradlew clean test -Denv=qa` | Exit code captured; step always exits 0 |
 | Classify | `scripts/analyze-test-results.sh` | Job outcome determined here |
 
-The classifier compares JUnit XML results to the accepted baseline. The CI badge is **green only when the result is `VALIDATED_BASELINE`** — meaning exactly `{runScenario[9,10,11,13,14,15]}` failed and no other deviations exist. Any other outcome (unexpected failure, count mismatch, missing reports) produces a red badge.
+The classifier uses JUnit XML for execution counts (total/passed/failed) and the Cucumber JSON
+report for failed-scenario identity, matching each failure by its stable Cucumber JSON scenario
+`id` rather than TestNG execution order. The CI badge is **green only when the result is
+`VALIDATED_BASELINE`** — meaning exactly the 6 accepted known-failure scenario IDs failed and no
+other deviations exist. Any other outcome (`UNEXPECTED_REGRESSION`, count mismatch, missing
+reports) produces a red badge.
 
-For full CI pipeline details, see [CI_CD_GUIDE.md](CI_CD_GUIDE.md).
+For full CI pipeline details, see [CI_CD_GUIDE.md](../guides/CI_CD_GUIDE.md).
 
 ---
 

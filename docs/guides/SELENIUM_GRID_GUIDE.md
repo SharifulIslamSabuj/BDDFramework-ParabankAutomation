@@ -138,7 +138,7 @@ Expected result:
   Safety tests:           12/12 passed
   Cucumber executions:    18
   Passed:                 12
-  Known AUT failures:     6  (runScenario[9,10,11,13,14,15])
+  Known AUT failures:     6  (matched by Cucumber JSON scenario id — see docs/quality/KNOWN_AUT_LIMITATIONS.md)
   Unexpected failures:    0
 BUILD FAILED  ← expected; caused by the 6 known AUT failures
 ```
