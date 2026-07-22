@@ -7,6 +7,65 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.1.1] — 2026-07-22
+
+This is a patch release. It fixes a CI reliability issue and a CI classifier identity-matching
+defect, and completes a portfolio documentation reorganization and terminology synchronization.
+No application behaviour, test scenarios, or public framework API changed since v1.1.0.
+
+### Fixed
+
+- **CI window handling** — `DriverFactory` called `window().maximize()`, which on GitHub-hosted
+  Ubuntu runners (Xvfb, no window manager) routes through a CDP `Runtime.evaluate` call that
+  cannot be answered, throwing `unknown error: JavaScript code failed`. Replaced with
+  `window().setSize(new Dimension(1920, 1080))`, which uses the W3C Set Window Rect command
+  directly and works identically on local displays and Xvfb.
+- **CI result classifier identity matching** — `scripts/analyze-test-results.sh` previously
+  matched failed scenarios by their TestNG-generated `runScenario[N]` name, which is assigned by
+  data-provider invocation order rather than scenario content. Under `dataproviderthreadcount` > 1
+  (Gradle's own default is 2), the same index was directly reproduced being reused for two
+  different scenarios in the same run, with indices assigned out of declaration order. The
+  classifier now matches failed scenarios by the Cucumber JSON report's stable element-level
+  `id` (feature + scenario name + outline row ordinal), which does not depend on TestNG thread
+  count, execution order, or invocation index. JUnit XML remains the source of truth for
+  execution counts and the production-safety gate; a material disagreement between the JUnit XML
+  and Cucumber JSON counts is now treated as untrustworthy (`RESULTS_UNAVAILABLE`) rather than
+  resolved silently.
+
+### Changed
+
+- **`.github/workflows/automation-test.yml`** — Added a `cucumber-reports-<env>-run<N>` artifact
+  upload step for `build/reports/cucumber/`, since the Cucumber JSON report is now the classifier's
+  identity source of truth and is otherwise not collected as CI evidence.
+- **Documentation reorganized into a recruiter-facing structure** — `docs/` restructured into
+  `architecture/`, `guides/`, and `quality/` categories (see Removed, below, for what was cleared
+  out to make this a clean surface). All internal cross-links and the `README.md` / `CONTRIBUTING.md`
+  navigation tables were repaired to the new paths.
+- **Documentation terminology synchronized with the current classifier** — `README.md`,
+  `docs/PORTFOLIO_OVERVIEW.md`, `docs/guides/FRAMEWORK_EXTENSION_GUIDE.md`,
+  `docs/guides/PULL_REQUEST_CHECKLIST.md`, `docs/guides/SELENIUM_GRID_GUIDE.md`, and
+  `docs/quality/TEST_STRATEGY.md` no longer describe the retired `runScenario[N]` /
+  `KNOWN_FAILURE_INDICES` mechanism; all now describe `KNOWN_FAILURE_IDS` and the
+  `VALIDATED_BASELINE` / `UNEXPECTED_REGRESSION` outcomes consistently.
+- **`build.gradle`** — Project version updated from `1.1.0` to `1.1.1`.
+
+### Removed
+
+- **`docs/review/`** — all 13 point-in-time phase-by-phase development reports and baseline
+  investigation records. Internal development history with no reference value to a framework user.
+- **`docs/INTERVIEWER_GUIDE.md`** — its evidence trail depended entirely on the now-removed
+  `docs/review/` reports and asserted stale classifier internals.
+- **`docs/RELEASE_VALIDATION.md`** — a one-time v1.1.0 release-audit checklist, not evergreen
+  reference material.
+
+### Known Limitations
+
+Unchanged from v1.1.0 — see that section below. The six known AUT failures, the public AUT's
+intermittent instability (QR-001), Chrome-only CI/Grid coverage, and the absence of test-data
+cleanup and a LICENSE file all remain accurate.
+
+---
+
 ## [1.1.0] — 2026-07-19
 
 This release consolidates the framework following the initial v1.0.0 portfolio delivery.

@@ -10,7 +10,7 @@
 
 Portfolio-grade Java BDD automation framework for the [ParaBank](https://parabank.parasoft.com/parabank/) public banking demo, demonstrating maintainable UI automation, API-assisted test setup, production-write protection, Selenium Grid execution, CI result classification, and evidence-driven engineering practices.
 
-**Release documentation: v1.1.0** — [CHANGELOG](CHANGELOG.md) · [Release Notes](RELEASE_NOTES_v1.1.0.md)
+**Release documentation: v1.1.1** — [CHANGELOG](CHANGELOG.md) · [Release Notes](RELEASE_NOTES_v1.1.1.md)
 
 ---
 
