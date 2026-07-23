@@ -269,6 +269,8 @@ flowchart LR
 
 ## Reporting
 
+The dashboards below reflect a complete run — all 30 test cases (18 Cucumber scenarios + 12 Production Safety validation tests). Visible failures correspond to the documented, accepted AUT limitations, not a framework regression.
+
 ### Allure Report
 
 Every run generates Allure results, rendered here as the suite-level overview — pass rate, suite breakdown, and defect categories.
