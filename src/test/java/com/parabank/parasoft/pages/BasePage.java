@@ -2,7 +2,6 @@ package com.parabank.parasoft.pages;
 
 import com.parabank.parasoft.config.ConfigManager;
 import com.parabank.parasoft.utils.ElementActions;
-import com.parabank.parasoft.utils.ScreenshotUtils;
 import com.parabank.parasoft.utils.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -87,11 +86,5 @@ public class BasePage {
             logger.error("Failed to create page object: {}", pageClass.getName(), e);
             throw new RuntimeException("Failed to create page object: " + pageClass.getName(), e);
         }
-    }
-
-    // ===== SCREENSHOT =====
-
-    protected String takeScreenshot(String testName) {
-        return ScreenshotUtils.captureScreenshot(driver, testName);
     }
 }

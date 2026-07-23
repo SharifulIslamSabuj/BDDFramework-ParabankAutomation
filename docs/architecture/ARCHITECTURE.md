@@ -62,7 +62,7 @@ The AUT is a public demonstration application. The framework does not own or con
 │  Page Objects (extends BasePage)                │  ← UI abstraction
 │  Private locators, fluent API, typed navigation │
 ├─────────────────────────────────────────────────┤
-│  ElementActions / WaitUtils / JSUtils           │  ← Selenium wrappers
+│  ElementActions / WaitUtils                     │  ← Selenium wrappers
 │  Single-responsibility; no Thread.sleep()       │
 ├─────────────────────────────────────────────────┤
 │  DriverManager / DriverFactory                  │  ← Driver lifecycle
@@ -312,7 +312,7 @@ All four output formats are generated on every run, regardless of pass or fail. 
 | `pages` | `BasePage`, `LoginPage`, `RegisterPage`, `OverviewPage`, + 5 more | UI abstraction; private locators; fluent API |
 | `runner` | `TestRunner` | `@CucumberOptions`; TestNG integration; parallel DataProvider |
 | `stepdefinitions` | `LoginSteps`, `RegisterSteps` | Gherkin-to-Java mapping; assertions in `@Then` only |
-| `utils` | `ElementActions`, `WaitUtils`, `JSUtils`, `ScreenshotUtils`, `ExcelDataProvider`, `ParaBankApiClient` | Reusable cross-cutting utilities |
+| `utils` | `ElementActions`, `WaitUtils`, `ScreenshotUtils`, `ExcelDataProvider`, `ParaBankApiClient` | Reusable cross-cutting utilities |
 
 ---
 

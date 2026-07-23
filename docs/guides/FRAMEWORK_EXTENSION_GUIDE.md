@@ -37,7 +37,7 @@ Page objects  (pages/)
   │  Locators; browser actions; state queries; fluent API; navigation
   │
   ▼
-ElementActions / WaitUtils / JSUtils  (utils/)
+ElementActions / WaitUtils  (utils/)
   │  Single-responsibility wrappers for Selenium API calls
   │
   ▼
