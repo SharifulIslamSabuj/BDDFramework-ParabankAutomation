@@ -75,12 +75,4 @@ public class DriverManager {
     public static boolean isDriverInitialized() {
         return DRIVER_THREAD_LOCAL.get() != null;
     }
-
-    /**
-     * Clears the WebDriver ThreadLocal (used for cleanup)
-     */
-    public static void removeDriver() {
-        DRIVER_THREAD_LOCAL.remove();
-        logger.debug("WebDriver removed from ThreadLocal for thread: {}", Thread.currentThread().getId());
-    }
 }

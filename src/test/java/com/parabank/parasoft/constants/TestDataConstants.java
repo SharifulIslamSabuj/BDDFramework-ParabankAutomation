@@ -1,8 +1,14 @@
 package com.parabank.parasoft.constants;
 
 /**
- * TestDataConstants — environment identifiers, Cucumber tag strings,
- * and the default tag expression used across step definitions and hooks.
+ * TestDataConstants — environment identifiers consumed by {@link
+ * com.parabank.parasoft.config.ConfigManager} for environment-name comparisons.
+ *
+ * Cucumber tag strings and the default tag expression were removed in Phase 4
+ * dead-code cleanup after repository-wide analysis confirmed zero executable
+ * references — tag filtering is driven directly by {@code build.gradle}'s
+ * {@code cucumber.filter.tags} system property instead. See
+ * docs/quality/QUALITY_RISK_ASSESSMENT.md for the audit record.
  */
 public final class TestDataConstants {
 
@@ -11,18 +17,4 @@ public final class TestDataConstants {
     // ===== Environment names =====
     public static final String ENV_QA         = "qa";
     public static final String ENV_STAGING    = "staging";
-    public static final String ENV_PRODUCTION = "prod";
-
-    // ===== Cucumber feature-file tags =====
-    public static final String TAG_SMOKE      = "@smoke";
-    public static final String TAG_REGRESSION = "@regression";
-    public static final String TAG_NEGATIVE   = "@negative";
-    public static final String TAG_POSITIVE   = "@positive";
-
-    /**
-     * Default Cucumber tag expression applied when -Dcucumber.filter.tags is not
-     * supplied at the command line.  Mirrors the expression previously hard-coded
-     * in @CucumberOptions and now driven by build.gradle.
-     */
-    public static final String DEFAULT_TAG_EXPRESSION = "@smoke or @negative or @regression";
 }

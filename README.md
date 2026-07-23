@@ -366,7 +366,6 @@ src/test/
 │   └── utils/
 │       ├── ElementActions.java          # click, sendKeys, getText, clear
 │       ├── ExcelDataProvider.java       # POI reader; TestNG @DataProvider
-│       ├── JSUtils.java                 # JavaScript execution helpers
 │       ├── ParaBankApiClient.java       # HTTP POST for test user registration
 │       ├── ScreenshotUtils.java         # PNG capture; Cucumber / ExtentReport attachment
 │       └── WaitUtils.java              # WebDriverWait wrappers — no Thread.sleep()

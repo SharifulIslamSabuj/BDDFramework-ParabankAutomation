@@ -1,45 +1,18 @@
 package com.parabank.parasoft.constants;
 
 /**
- * FrameworkConstants — ParaBank application-specific constants.
+ * FrameworkConstants — default configuration values consumed by {@link
+ * com.parabank.parasoft.config.ConfigManager} when a property is not set.
  *
- * Infrastructure constants (browser names, timeouts, paths, report config,
- * environment names, Cucumber tags) have been moved to dedicated classes:
- *   BrowserConstants  — browser identifiers
- *   TimeoutConstants  — timeout and polling values
- *   PathConstants     — file-system paths and file names
- *   ReportConstants   — report configuration and formats
- *   TestDataConstants — environment names, tags, selectors
- *
- * This class retains only values that are specific to the ParaBank application
- * under test: URLs, page titles, and expected error messages.
+ * Application-specific values (URLs, page titles, expected error messages)
+ * were removed in Phase 4 dead-code cleanup after repository-wide analysis
+ * confirmed zero executable references — the framework asserts against
+ * page/feature-file literals directly instead. See
+ * docs/quality/QUALITY_RISK_ASSESSMENT.md for the audit record.
  */
 public final class FrameworkConstants {
 
     private FrameworkConstants() {}
-
-    // ===== Application URLs =====
-    public static final String PARABANK_BASE_URL = "https://parabank.parasoft.com/parabank/";
-    public static final String LOGIN_PAGE_URL    = PARABANK_BASE_URL + "login.htm";
-    public static final String REGISTER_PAGE_URL = PARABANK_BASE_URL + "register.htm";
-
-    // ===== Page titles =====
-    public static final String PARABANK_TITLE       = "ParaBank | Welcome | Online Banking";
-    public static final String LOGIN_PAGE_TITLE     = "ParaBank | Welcome | Online Banking";
-    public static final String OVERVIEW_PAGE_TITLE  = "ParaBank | Accounts | Overview";
-
-    // ===== Expected application error messages =====
-    // Verified against the live ParaBank demo server (parabank.parasoft.com).
-    // The demo server returns two distinct validation messages:
-    //   - Blank credentials  → "Please enter a username and password."
-    //   - All other failures → "The username and password could not be verified."
-    public static final String ERROR_INVALID_CREDENTIALS    = "The username and password could not be verified.";
-    public static final String ERROR_MISSING_CREDENTIALS    = "Please enter a username and password.";
-    public static final String ERROR_USERNAME_LENGTH        = "The username and password could not be verified.";
-    public static final String ERROR_PASSWORD_LENGTH        = "The username and password could not be verified.";
-    public static final String ERROR_INVALID_USERNAME_FORMAT = "The username and password could not be verified.";
-    public static final String ERROR_INVALID_PASSWORD       = "The username and password could not be verified.";
-    public static final String ERROR_LOCKED_ACCOUNT         = "The username and password could not be verified.";
 
     // ===== Default configuration booleans =====
     public static final boolean DEFAULT_HEADLESS_MODE          = false;

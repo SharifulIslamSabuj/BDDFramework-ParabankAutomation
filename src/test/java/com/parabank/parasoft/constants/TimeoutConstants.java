@@ -12,12 +12,4 @@ public final class TimeoutConstants {
     // ===== Explicit waits (seconds) =====
     public static final int EXPLICIT_WAIT_TIME        = 30;
     public static final int PAGE_LOAD_TIMEOUT         = 45;
-    public static final int FLUENT_WAIT_POLLING_INTERVAL = 2;
-
-    // ===== Parallel execution limits =====
-    public static final int DEFAULT_THREAD_POOL_SIZE  = 2;
-    public static final int MAX_THREAD_POOL_SIZE      = 4;
-
-    // ===== Millisecond intervals =====
-    public static final long POLLING_INTERVAL_MILLIS  = 500L;
 }

@@ -7,6 +7,44 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased]
+
+Dead-code cleanup following a repository-wide engineering review. No application behaviour, test
+scenarios, public framework API, or CI/classifier logic changed.
+
+### Removed
+
+- **`JSUtils.java`** — 324-line JavaScript-execution utility class; repository-wide search confirmed
+  zero executable references to the class or any of its 14 methods anywhere in the codebase.
+- **`BasePage.takeScreenshot(String)`** — zero callers; screenshot capture is already performed
+  directly by `Hooks` via `ScreenshotUtils`.
+- **Four unused `ScreenshotUtils` methods** — `captureScreenshotWithFileName`,
+  `captureScreenshotAsBase64`, `getScreenshotDirectory`, `cleanOldScreenshots` — zero callers
+  confirmed; the active `captureScreenshot`/`captureScreenshotAsBytes` methods used by `Hooks` are
+  unaffected.
+- **`ConfigManager.getThreadPoolSize()`** — zero callers; parallelism is controlled entirely via
+  Gradle system properties (`maxParallelForks`, `dataproviderthreadcount`), not this getter. The
+  underlying `threadPoolSize` property key was left in place.
+- **`DriverManager.removeDriver()`** — zero callers; redundant with `quitDriver()`, which already
+  quits the WebDriver and clears the `ThreadLocal` reference.
+- **32 unused constants** across `FrameworkConstants`, `TestDataConstants`, `TimeoutConstants`, and
+  `ReportConstants` — each individually confirmed to have zero executable references via
+  repository-wide search before removal. Includes `POLLING_INTERVAL_MILLIS`, previously tracked as
+  known technical debt (QR-007, TD-002 in `docs/quality/QUALITY_RISK_ASSESSMENT.md`).
+
+### Changed
+
+- Stale documentation and Javadoc references to the removed code above synchronized across
+  `README.md`, `docs/architecture/ARCHITECTURE.md`, `docs/guides/FRAMEWORK_EXTENSION_GUIDE.md`, and
+  `docs/quality/QUALITY_RISK_ASSESSMENT.md`.
+
+`ExcelDataProvider` was reviewed and retained in full — it remains actively used by `RegisterSteps`.
+Post-cleanup validation: compilation, `testClasses`, and Production Safety (12/12) all pass; the full
+BDD suite reproduces the exact canonical baseline (18 total, 12 passed, 6 documented AUT failures, 0
+unexpected) — classifier result `VALIDATED_BASELINE`.
+
+---
+
 ## [1.1.1] — 2026-07-22
 
 This is a patch release. It fixes a CI reliability issue and a CI classifier identity-matching
@@ -60,9 +98,9 @@ No application behaviour, test scenarios, or public framework API changed since 
 
 ### Known Limitations
 
-Unchanged from v1.1.0 — see that section below. The six known AUT failures, the public AUT's
-intermittent instability (QR-001), Chrome-only CI/Grid coverage, and the absence of test-data
-cleanup and a LICENSE file all remain accurate.
+Unchanged from v1.1.0 — see that section below, except a LICENSE file was added after this release
+and is no longer a limitation. The six known AUT failures, the public AUT's intermittent instability
+(QR-001), Chrome-only CI/Grid coverage, and the absence of test-data cleanup remain accurate.
 
 ---
 

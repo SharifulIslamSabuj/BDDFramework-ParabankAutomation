@@ -114,7 +114,7 @@ is applied where evidence modifies the matrix-derived rating, and the rationale 
 | QR-004 | Test Data | Test-data accumulation on shared public AUT | Medium | Medium | Medium | API idempotency; "already exists" treated as success | Accepted |
 | QR-005 | Configuration | `production` alias has no dedicated properties file | Low | Medium | Low | Falls back to `config.properties`; guard prevents writes | Accepted |
 | QR-006 | Configuration | Orphaned `implicitWait` property in 5 config files | Low | Low | Low | No loader reads it; harmless | Accepted |
-| QR-007 | Configuration | `POLLING_INTERVAL_MILLIS` constant — no active caller | Low | Low | Low | Constant exists; unused; no functional impact | Deferred |
+| QR-007 | Configuration | ~~`POLLING_INTERVAL_MILLIS` constant — no active caller~~ | Low | Low | Low | Resolved — constant removed after repository-wide dead-code audit confirmed zero callers | Resolved |
 | QR-008 | Infrastructure | Selenium Grid — `selenium-tests` depends on `chrome-node` without health-check gate | Low | Medium | Low | Health-check cascade implemented in Phase 9; `chrome-node` must be healthy before `selenium-tests` starts | Mitigated |
 | QR-009 | CI/CD | Known failures cause GitHub Actions job to report failure status | High | Low | Medium | Result classifier distinguishes known baseline from unexpected regression; job is green for VALIDATED_BASELINE | Mitigated |
 | QR-010 | Security | Production write guard scope — read-only scenario writes not covered | Low | Low | Low | Guard targets setup writes only; documented limitation | Accepted |
@@ -418,7 +418,7 @@ the revalidation guidance in `docs/CI_CD_GUIDE.md` §4.
 | ID | Item | Evidence | Current impact | Priority | Proposed phase |
 |---|---|---|---|---|---|
 | TD-001 | Orphaned `implicitWait` property in 5 config files | Phase 5 report; `getImplicitWait()` removed but keys retained | None — no code reads the key | Low | Future configuration cleanup phase |
-| TD-002 | `POLLING_INTERVAL_MILLIS` — declared, zero callers confirmed | `git grep` confirms declaration only in `TimeoutConstants.java:22`; no other source file references it | None — no functional impact | Low | Future dead-code review |
+| TD-002 | ~~`POLLING_INTERVAL_MILLIS` — declared, zero callers confirmed~~ | Resolved — removed from `TimeoutConstants.java` after a repository-wide dead-code audit confirmed zero callers | None | — | Resolved |
 | TD-003 | `production` alias has no dedicated `.properties` file | Phase 4 report; `production.properties` not created (outside Phase 4 scope) | Low — falls back to `config.properties` | Low | Dedicated configuration file phase |
 | TD-004 | ~~Selenium Grid `chrome-node` has no health-check gate~~ | Resolved in Phase 9 — health-check cascade implemented; `scripts/wait-for-grid.ps1` added | None | — | Resolved |
 | TD-005 | No test-data cleanup for positive registration scenarios | `Hooks.tryBrowserRegistration()` and `ExcelDataProvider` generate unique usernames with no delete operation | Low — accumulates on public AUT only; no private deployment | Low | Private deployment or cleanup phase |
@@ -460,7 +460,7 @@ the revalidation guidance in `docs/CI_CD_GUIDE.md` §4.
 |---|---|---|
 | Phase 7 (current) | Quality risk documentation | All risks identified and classified |
 | Future: Configuration cleanup | Remove orphaned `implicitWait` keys; create `production.properties` | TD-001, TD-003, QR-005 |
-| Future: Dead code review | Classify and remove `POLLING_INTERVAL_MILLIS` if confirmed dead | TD-002, QR-007 |
+| ~~Future: Dead code review~~ | ~~Classify and remove `POLLING_INTERVAL_MILLIS` if confirmed dead~~ | Completed — TD-002 resolved, QR-007 resolved |
 | ~~Future: Grid readiness~~ | ~~Add Chrome Node health check in `docker-compose.grid.yml`~~ | Completed in Phase 9 — TD-004 resolved, QR-008 mitigated |
 | Future: Coverage expansion | Feature files for 5 implemented page objects | TestD-004, TestD-005 |
 | Future: Private deployment | Eliminate shared-server data accumulation and AUT-LIM-002 | QR-004, TD-005, QR-003 |

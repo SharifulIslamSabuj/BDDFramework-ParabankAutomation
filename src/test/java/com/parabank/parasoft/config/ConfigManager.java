@@ -248,20 +248,6 @@ public class ConfigManager {
     }
 
     /**
-     * Gets parallel execution thread pool size
-     *
-     * @return thread count
-     */
-    public int getThreadPoolSize() {
-        int threadCount = getInt("threadPoolSize", TimeoutConstants.DEFAULT_THREAD_POOL_SIZE);
-        if (threadCount <= 0 || threadCount > TimeoutConstants.MAX_THREAD_POOL_SIZE) {
-            logger.warn("Invalid thread pool size: {}. Using default: {}", threadCount, TimeoutConstants.DEFAULT_THREAD_POOL_SIZE);
-            return TimeoutConstants.DEFAULT_THREAD_POOL_SIZE;
-        }
-        return threadCount;
-    }
-
-    /**
      * Resets the singleton instance (useful for testing)
      */
     public static void resetInstance() {
