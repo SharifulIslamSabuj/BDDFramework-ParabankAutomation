@@ -21,6 +21,7 @@ Portfolio-grade Java BDD automation framework for the [ParaBank](https://paraban
 - [Architecture](#architecture)
 - [Technology Stack](#technology-stack)
 - [CI/CD Pipeline](#cicd-pipeline)
+- [Reporting](#reporting)
 - [Known AUT Failures](#known-aut-failures)
 - [Documentation](#documentation)
 - [Author](#author)
@@ -263,6 +264,22 @@ flowchart LR
 | `RESULTS_UNAVAILABLE` | **Red** — no JUnit XML found, or the Cucumber JSON report is missing/malformed/inconsistent with the XML counts |
 
 → [docs/CI_CD_GUIDE.md](docs/guides/CI_CD_GUIDE.md) — full CI reference
+
+---
+
+## Reporting
+
+### Allure Report
+
+Every run generates Allure results, rendered here as the suite-level overview — pass rate, suite breakdown, and defect categories.
+
+![Allure Report Overview](docs/assets/reports/allure-report-overview.png)
+
+### ExtentReports
+
+ExtentReports produces a Spark-themed dashboard with feature/scenario/step pass-fail breakdowns and a tag-level summary.
+
+![ExtentReports Overview](docs/assets/reports/extent-report-overview.png)
 
 ---
 
