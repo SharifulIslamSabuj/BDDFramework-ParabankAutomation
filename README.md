@@ -451,6 +451,8 @@ This project is licensed under the ISC License. See the [LICENSE](LICENSE) file 
 
 **Md. Shariful Islam**
 
+Senior QA Automation Engineer | SDET
+
 [LinkedIn](https://linkedin.com/in/sharifulislam-sqa) · [GitHub](https://github.com/SharifulIslamSabuj)
 
 ---
